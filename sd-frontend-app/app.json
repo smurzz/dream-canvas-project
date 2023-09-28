@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "sd-frontend-mobile-app",
+    "slug": "sd-frontend-mobile-app",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "name": "sd-frontend-mobile-app"
+}
