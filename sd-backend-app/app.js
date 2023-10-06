@@ -4,7 +4,8 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const database = require('./app/config/dbConfig');
-const txt2imagesRoutes = require('./app/routes/txt2imageRoutes');
+// const txt2imagesRoutes = require('./app/routes/txt2imgRoutes');
+const imageRoutes = require('./app/routes/imageRoutes');
 const authRouters = require('./app/routes/authRoutes');
 const userRouters = require('./app/routes/userRoutes');
 
@@ -17,7 +18,8 @@ app.use(morgan('dev'));
 app.use(cors());
 
 // Routes
-app.use('/api/txt2image', txt2imagesRoutes);
+// app.use('/api/txt2image', txt2imagesRoutes);
+app.use('/api/images', imageRoutes);
 app.use('/api/auth', authRouters);
 app.use('/api/users', userRouters);
 
@@ -37,6 +39,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(function (err, req, res, next) {
+    console.log(err);
     res.status(500).json({ error: 'Oops! Something went wrong..' });
 });
 

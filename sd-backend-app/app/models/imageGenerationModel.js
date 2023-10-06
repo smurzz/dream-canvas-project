@@ -1,33 +1,26 @@
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-    const User = sequelize.define('User', {
+    const ImageGeneration = sequelize.define('ImageGeneration', {
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true,
         },
-        email: {
-            type: DataTypes.STRING,
-            unique: true,
+        subject: {
+            type: DataTypes.TEXT,
             allowNull: false,
         },
-        password: {
+        artDirection: {
             type: DataTypes.STRING,
             allowNull: false,
-            trim: true,
         },
-        firstname: {
-            type: DataTypes.STRING, 
-            allowNull: true,
-        },
-        lastname: {
+        artist: {
             type: DataTypes.STRING,
-            allowNull: true,
         },
     }, {
         timestamps: true,
     });
 
-    return User;
+    return ImageGeneration;
 };

@@ -1,25 +1,42 @@
-import React from 'react'
-import { Provider } from 'react-native-paper'
-import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator } from '@react-navigation/stack'
-import { theme } from './src/core/theme'
+import React, { useEffect, useState } from 'react';
+import 'react-native-gesture-handler'
+import { Provider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { theme } from './src/core/theme';
+import { isTokenExpired } from './src/utils/isAuth';
 
 import {
   StartScreen,
   LoginScreen,
   RegisterScreen,
-  ResetPasswordScreen,
   Dashboard,
-} from './src/screens'
+} from './src/screens';
 
-const Stack = createStackNavigator()
+const Stack = createStackNavigator();
 
 export default function App() {
+
+  const [tokenExpired, setTokenExpired] = useState(false);
+
+  useEffect(() => {
+    async function checkTokenExpiration() {
+      try {
+        const expired = await isTokenExpired();
+        setTokenExpired(expired);
+      } catch (error) {
+        console.error('Error checking token expiration:', error);
+      }
+    }
+
+    checkTokenExpiration();
+  }, []);
+
   return (
     <Provider theme={theme}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="StartScreen"
+          initialRouteName={tokenExpired ? 'StartScreen' : 'Dashboard'}
           screenOptions={{
             headerShown: false,
           }}
@@ -28,10 +45,6 @@ export default function App() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
-          <Stack.Screen
-            name="ResetPasswordScreen"
-            component={ResetPasswordScreen}
-          />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

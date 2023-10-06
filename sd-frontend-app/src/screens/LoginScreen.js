@@ -43,8 +43,8 @@ export default function LoginScreen({ navigation }) {
         setLoginStatus({ status: 'error', message: response.data.error });
       }
     } catch (error) {
-      console.log(error.response);
-      if(error.response.status === 400 || error.response.status === 404){
+      console.log(error);
+      if(error.response && (error.response.status === 400 || error.response.status === 404)){
         setLoginStatus({ status: 'error', message: error.response.data.error });
       } else {
         setLoginStatus({ status: 'error', message: 'Login failed. Please try again.' });

@@ -1,29 +1,24 @@
 const { check, validationResult } = require('express-validator');
 
-exports.userValidator = [
-    check('email')
+exports.imageGenerationValidator = [
+    check('subject')
         .trim()
         .not()
         .isEmpty()
-        .withMessage('Email is required')
-        .normalizeEmail()
-        .isEmail()
-        .withMessage('Invalid email format'),
-
-    check('password')
+        .withMessage('Subject is required')
+        .isString()
+        .withMessage('Subject must be a string'),
+    check('artDirection')
         .trim()
-        .isLength({ min: 3 })
-        .withMessage('Password must be at least 3 characters'),
-
-    check('firstname')
+        .not()
+        .isEmpty()        
+        .withMessage('Art direction is required')
+        .isString()
+        .withMessage('Art direction must be a string'),
+    check('artist')
         .optional({ nullable: true })
         .isString()
-        .withMessage('Firstname must be a string'),
-
-    check('lastname')
-        .optional({ nullable: true })
-        .isString()
-        .withMessage('Lastname must be a string'),
+        .withMessage('Artist must be a string'),
 ];
 
 exports.validate = (req, res, next) => {
