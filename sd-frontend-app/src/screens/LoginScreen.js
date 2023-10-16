@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, TouchableOpacity, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import Background from '../components/Background';
+import BackgroundPublic from '../components/BackgroundPublic';
 import Logo from '../components/Logo';
 import Header from '../components/Header';
 import Button from '../components/Button';
@@ -36,7 +36,7 @@ export default function LoginScreen({ navigation }) {
       if (response.status === 200) {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Dashboard' }],
+          routes: [{ name: 'BottomTabs' }],
         })
       } else {
         console.log(response);
@@ -55,7 +55,7 @@ export default function LoginScreen({ navigation }) {
   }
 
   return (
-    <Background>
+    <BackgroundPublic>
       <BackButton goBack={navigation.goBack} />
       <Logo />
       <Header>Login</Header>
@@ -102,7 +102,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.link}>Sign up</Text>
         </TouchableOpacity>
       </View>
-    </Background>
+    </BackgroundPublic>
   )
 }
 

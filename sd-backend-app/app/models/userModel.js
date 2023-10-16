@@ -19,12 +19,14 @@ module.exports = (sequelize) => {
         },
         firstname: {
             type: DataTypes.STRING, 
-            allowNull: true,
         },
         lastname: {
             type: DataTypes.STRING,
-            allowNull: true,
         },
+        isAdmin: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        }
     }, {
         timestamps: true,
     });

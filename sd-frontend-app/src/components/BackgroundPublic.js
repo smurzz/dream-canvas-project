@@ -2,7 +2,7 @@ import React from 'react'
 import { ImageBackground, StyleSheet, KeyboardAvoidingView } from 'react-native'
 import { theme } from '../core/theme'
 
-export default function Background({ children }) {
+export default function BackgroundPublic({ children }) {
   return (
     <ImageBackground
       source={require('../assets/background_dot.png')}
@@ -31,4 +31,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-})
+});

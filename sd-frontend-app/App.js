@@ -6,14 +6,24 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { theme } from './src/core/theme';
 import { isTokenExpired } from './src/utils/isAuth';
 
-import {
-  StartScreen,
-  LoginScreen,
-  RegisterScreen,
-  Dashboard,
-} from './src/screens';
+import { StartScreen, LoginScreen, RegisterScreen, HelpPage, Home } from './src/screens';
+import BottomTabs from './src/components/BottomTabs';
 
 const Stack = createStackNavigator();
+
+if (__DEV__) {
+  const ignoreWarns = ["VirtualizedLists should never be nested inside plain ScrollViews"];
+
+  const errorWarn = global.console.error;
+  global.console.error = (...arg) => {
+    for (const error of ignoreWarns) {
+      if (arg[0].startsWith(error)) {
+        return;
+      }
+    }
+    errorWarn(...arg);
+  };
+}
 
 export default function App() {
 
@@ -36,7 +46,7 @@ export default function App() {
     <Provider theme={theme}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName={tokenExpired ? 'StartScreen' : 'Dashboard'}
+          initialRouteName={tokenExpired ? 'StartScreen' : 'BottomTabs'}
           screenOptions={{
             headerShown: false,
           }}
@@ -44,7 +54,9 @@ export default function App() {
           <Stack.Screen name="StartScreen" component={StartScreen} />
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
-          <Stack.Screen name="Dashboard" component={Dashboard} />
+          <Stack.Screen name="BottomTabs" component={BottomTabs} />
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="HelpPage" component={HelpPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import Background from '../components/Background'
+import BackgroundPublic from '../components/BackgroundPublic'
 import BackButton from '../components/BackButton'
 import Logo from '../components/Logo'
 import Header from '../components/Header'
@@ -20,7 +20,7 @@ export default function ResetPasswordScreen({ navigation }) {
   }
 
   return (
-    <Background>
+    <BackgroundPublic>
       <BackButton goBack={navigation.goBack} />
       <Logo />
       <Header>Restore Password</Header>
@@ -44,6 +44,6 @@ export default function ResetPasswordScreen({ navigation }) {
       >
         Send Instructions
       </Button>
-    </Background>
+    </BackgroundPublic>
   )
 }
