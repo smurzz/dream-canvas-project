@@ -11,7 +11,7 @@ import BottomTabs from './src/components/BottomTabs';
 
 const Stack = createStackNavigator();
 
-if (__DEV__) {
+/* if (__DEV__) {
   const ignoreWarns = ["VirtualizedLists should never be nested inside plain ScrollViews"];
 
   const errorWarn = global.console.error;
@@ -23,7 +23,7 @@ if (__DEV__) {
     }
     errorWarn(...arg);
   };
-}
+} */
 
 export default function App() {
 

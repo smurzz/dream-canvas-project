@@ -28,7 +28,16 @@ const findAllMyImages = async (req, res) => {
             ],
         });
 
-        res.status(200).json(allImages);
+        // Convert blob data to base64
+        const imagesWithBase64 = allImages.map(image => {
+            const base64 = Buffer.from(image.generatedImage.data).toString('base64');
+            return {
+                ...image.toJSON(),
+                generatedImage: { ...image.generatedImage.toJSON(), data: base64, },
+            };
+        });
+
+        res.status(200).json(imagesWithBase64);
     } catch (error) {
         console.error('Error by getting user images: ', error);
         res.status(500).json({ error: 'Failed to get user images' });
