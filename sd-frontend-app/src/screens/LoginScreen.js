@@ -19,6 +19,7 @@ export default function LoginScreen({ navigation }) {
   const [loginStatus, setLoginStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
 
+  // Login by email and password
   const onLoginPressed = async () => {
     const emailError = emailValidator(email.value);
     const passwordError = passwordValidator(password.value);

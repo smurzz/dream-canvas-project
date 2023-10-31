@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { db } = require('../config/dbConfig');
 const { default: axios } = require('axios');
-const { where } = require('sequelize');
 
 // FIND
 const findAllMyImages = async (req, res) => {
@@ -19,12 +18,7 @@ const findAllMyImages = async (req, res) => {
                 {
                     model: db.Image,
                     as: 'generatedImage',
-                },
-                {
-                    model: db.User,
-                    as: 'author',
-                    attributes: { exclude: ['password'] },
-                },
+                }
             ],
         });
 
@@ -43,20 +37,96 @@ const findAllMyImages = async (req, res) => {
         res.status(500).json({ error: 'Failed to get user images' });
     }
 }
+const findAllGeneratedImages = async (req, res) => {
+    const userEmail = req.user.email;
+    const query = req.query;
 
-const findImageById = async (req, res) => {
     try {
-        const imageId = req.params.id;
+        const author = await db.User.findOne({ where: { email: userEmail } });
+        if (!author) return res.status(404).json({ error: "User is not found" });
 
-        const image = await db.Image.findByPk(imageId);
+        if (author.isAdmin) {
+            const allGeneratedImages = await db.ImageGeneration.findAll({ where: query });
 
-        if (!image) {
-            return res.status(404).json({ error: 'Image not found' });
+            res.status(200).json(allGeneratedImages);
+        } else {
+            res.status(403).json({ error: 'User is not authorized' });
         }
+    } catch (error) {
+        console.error('Error getting generated image by ID:', error);
+        res.status(500).json({ error: 'Failed to get the generated image by ID' });
+    }
+};
+const findGeneratedImageById = async (req, res) => {
+    const userEmail = req.user.email;
+    const generatedImageId = req.params.generationID;
 
-        res.setHeader('Content-Type', image.type);
-        res.setHeader('Content-Disposition', `inline; filename="${image.name}"`);
-        res.status(200).send(image.data);
+    try {
+        const author = await db.User.findOne({ where: { email: userEmail } });
+        if (!author) return res.status(404).json({ error: "User is not found" });
+
+        if (author.isAdmin) {
+            const generatedImage = await db.ImageGeneration.findByPk(generatedImageId);
+
+            if (!generatedImage) return res.status(404).json({ error: `Generated image with id ${generatedImageId} not found` });
+
+            res.status(200).json(generatedImage);
+        } else {
+            res.status(403).json({ error: 'User is not authorized' });
+        }
+    } catch (error) {
+        console.error('Error getting generated image by ID:', error);
+        res.status(500).json({ error: 'Failed to get the generated image by ID' });
+    }
+};
+const findAllImages = async (req, res) => {
+    const userEmail = req.user.email;
+    const query = req.query;
+
+    try {
+        const author = await db.User.findOne({ where: { email: userEmail } });
+        if (!author) return res.status(404).json({ error: "User is not found" });
+
+        if (author.isAdmin) {
+            const allImages = await db.Image.findAll({ where: query });
+
+            const imagesWithBase64 = allImages.map(image => {
+                const base64 = Buffer.from(image.data).toString('base64');
+                return {
+                    ...image.toJSON(), data: base64,
+                };
+            });
+
+            res.status(200).json(imagesWithBase64);
+        } else {
+            res.status(403).json({ error: 'User is not authorized' });
+        }
+    } catch (error) {
+        console.error('Error getting all image by ID:', error);
+        res.status(500).json({ error: 'Failed to get all image by ID' });
+    }
+};
+const findImageById = async (req, res) => {
+    const userEmail = req.user.email;
+    const imageId = req.params.imageID;
+
+    try {
+        const author = await db.User.findOne({ where: { email: userEmail } });
+        if (!author) return res.status(404).json({ error: "User is not found" });
+
+        if (author.isAdmin) {
+            const image = await db.Image.findByPk(imageId);
+
+            if (!image) {
+                return res.status(404).json({ error: 'Image not found' });
+            }
+
+            res.setHeader('Content-Type', image.type);
+            res.setHeader('Content-Disposition', `inline; filename="${image.name}"`);
+            res.status(200).send(image.data);
+        } else {
+            res.status(403).json({ error: 'User is not authorized' });
+        }
     } catch (error) {
         console.error('Error getting image by ID:', error);
         res.status(500).json({ error: 'Failed to get the image by ID' });
@@ -65,32 +135,85 @@ const findImageById = async (req, res) => {
 
 // CREATE
 const createImg2img = async (req, res) => {
+    const { mimetype, originalname, filename } = req.file;
+    const { subject, artDirection, artist } = req.body;
+    const userEmail = req.user.email;
+
+    const externalServiceUrl = 'http://127.0.0.1:7860/sdapi/v1/img2img';
+    const prompt = `${artDirection}-style painting of ${subject}${artist ? `, by ${artist}` : ''}`;
+
+    const t = await db.sequelize.transaction();
 
     try {
-        console.log(req.file);
+        // Find the user and check if the user exists
+        const author = await db.User.findOne({ where: { email: userEmail } }, { transaction: t });
+        if (!author) return res.status(404).json({ error: "User is not found" });
 
-        if (req.file === undefined) {
-            return res.status(400).json({ error: "You must select a file" });
-        }
-
-        const { mimetype, originalname, filename } = req.file;
-
+        // Store uploaded image locally and get Base64 data from it
+        if (req.file === undefined) return res.status(400).json({ error: "You must select a file" });
         const filePath = path.join('app/resources/static/assets/uploads', filename);
         const fileData = await fs.promises.readFile(filePath);
+        const base64String = fileData.toString('base64');
 
-        await db.Image.create({
+        // Generate an image with the stable diffusion API
+        const sdResponse = await axios.post(externalServiceUrl, {
+            prompt,
+            init_images: [base64String],
+            save_images: true
+        });
+
+        if (!sdResponse.data || !sdResponse.data.images) {
+            return res.status(500).json({ error: 'Failed to create an image' });
+        }
+
+        // Create an image
+        const base64ImageData = sdResponse.data.images[0];
+        const imageDataBuffer = Buffer.from(base64ImageData, 'base64');
+
+        const uploadImage = await db.Image.create({
             type: mimetype,
             name: originalname,
             data: fileData,
+        }, { transaction: t });
+
+        const generatedImage = await db.Image.create({
+            type: "image/png",
+            name: `dream-canvas-${Date.now()}`,
+            data: imageDataBuffer,
+        }, { transaction: t });
+
+        // Create image generation information
+        const newImageGeneration = await db.ImageGeneration.create({
+            subject,
+            artDirection,
+            artist,
+            author_id: author.id,
+            generatedImage_id: generatedImage.id,
+            uploadedImage_id: uploadImage.id
+        }, { transaction: t });
+
+        // Get generated data
+        const generation = await db.ImageGeneration.findByPk(newImageGeneration.id, {
+            include: [
+                { model: db.Image, as: 'generatedImage', },
+                { model: db.Image, as: 'uploadedImage', },
+            ],
+            transaction: t
         });
 
-        res.status(201).json({ message: 'The image was successfully created' });
+        // Convert blob data to base64
+        const generatedImageBase64 = Buffer.from(generation.generatedImage.data).toString('base64');
+        generation.generatedImage.data = generatedImageBase64;
+        const uploadedImageBase64 = Buffer.from(generation.uploadedImage.data).toString('base64');
+        generation.uploadedImage.data = uploadedImageBase64;
+
+        await t.commit();
+        res.status(201).json(generation);
     } catch (error) {
         console.error('Error creating image:', error);
         res.status(500).json({ error: 'Failed to create an image' });
     }
 }
-
 const createTxt2img = async (req, res) => {
     const { subject, artDirection, artist } = req.body;
     const userEmail = req.user.email;
@@ -135,10 +258,13 @@ const createTxt2img = async (req, res) => {
         const generatedImage = await db.ImageGeneration.findByPk(newImageGeneration.id, {
             include: [
                 { model: db.Image, as: 'generatedImage', },
-                { model: db.User, as: 'author', attributes: { exclude: ['password'] }, },
             ],
             transaction: t
         });
+
+        // Convert blob data to base64
+        const base64 = Buffer.from(generatedImage.generatedImage.data).toString('base64');
+        generatedImage.generatedImage.data = base64;
 
         await t.commit();
         res.status(201).json(generatedImage);
@@ -149,4 +275,156 @@ const createTxt2img = async (req, res) => {
     }
 }
 
-module.exports = { createImg2img, createTxt2img, findAllMyImages, findImageById };
+// DELETE
+const deleteImageById = async (req, res) => {
+    const imageID = req.params.imageID;
+    const userEmail = req.user.email;
+
+    try {
+        const user = await db.User.findOne({ where: { email: userEmail } });
+        if (!user) return res.status(404).json({ error: "User is not found" });
+
+        if (user.isAdmin) {
+            const foundImage = await db.Image.findByPk(imageID);
+            if (!foundImage) return res.status(404).json({ error: `Image with id ${imageID} is not found` });
+
+            await foundImage.destroy();
+            res.status(204).end();
+        } else {
+            return res.status(403).json({ error: 'User is not authorized' });
+        }
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({ error: 'Failed to delete an image' });
+    }
+}
+const deleteAllImages = async (req, res) => {
+    const userEmail = req.user.email;
+
+    try {
+        const user = await db.User.findOne({ where: { email: userEmail } });
+        if (!user) return res.status(404).json({ error: "User is not found" });
+
+        if (!user.isAdmin) return res.status(403).json({ error: 'User is not authorized' });
+
+        await db.Image.destroy({
+            where: {},
+            truncate: true
+        });
+
+        res.status(204).end();
+    } catch (error) {
+        console.error('Error deleting all images: ', error);
+        res.status(500).json({ error: 'Failed to delete all images' });
+    }
+};
+const deleteGeneratedImageById = async (req, res) => {
+    const generationID = req.params.generationID;
+    const userEmail = req.user.email;
+
+    const t = await db.sequelize.transaction();
+    try {
+        const user = await db.User.findOne({ where: { email: userEmail } });
+        if (!user) return res.status(404).json({ error: "User is not found" });
+
+        const foundGeneration = await db.ImageGeneration.findByPk(generationID, {
+            include: [
+                { model: db.Image, as: 'generatedImage' },
+                { model: db.Image, as: 'uploadedImage' },
+            ],
+            transaction: t,
+        });
+        if (!foundGeneration) return res.status(404).json({ error: `Image Generation with id ${generationID} is not found` });
+
+        if (user.isAdmin || user.id === foundGeneration.author_id) {
+            if (foundGeneration.generatedImage) await foundGeneration.generatedImage.destroy({ transaction: t });
+            if (foundGeneration.uploadedImage) await foundGeneration.uploadedImage.destroy({ transaction: t });
+
+            await foundGeneration.destroy({ transaction: t });
+            await t.commit();
+            res.status(204).end();
+        } else {
+            return res.status(403).json({ error: 'User is not authorized' });
+        }
+    } catch (error) {
+        console.error('Error deleting image generation:', error);
+        await t.rollback();
+        res.status(500).json({ error: 'Failed to delete an image generation' });
+    }
+}
+const deleteAllMyGeneratedImages = async (req, res) => {
+    const userEmail = req.user.email;
+    const t = await db.sequelize.transaction();
+
+    try {
+        const user = await db.User.findOne({ where: { email: userEmail } });
+        if (!user) return res.status(404).json({ error: "User is not found" });
+
+        const allImageGenerations = await db.ImageGeneration.findAll({
+            where: { author_id: user.id },
+            include: [
+                { model: db.Image, as: 'generatedImage', },
+                { model: db.Image, as: 'uploadedImage', },
+            ],
+            transaction: t,
+        });
+
+        for (const generation of allImageGenerations) {
+            if (generation.generatedImage) await generation.generatedImage.destroy({ transaction: t });
+            if (generation.uploadedImage) await generation.uploadedImage.destroy({ transaction: t });
+            await generation.destroy({ transaction: t });
+        }
+
+        await t.commit();
+        res.status(204).end();
+    } catch (error) {
+        console.error('Error deleting all image generations:', error);
+        await t.rollback();
+        res.status(500).json({ error: 'Failed to delete all image generations' });
+    }
+}
+const deleteAllGeneratedImages = async (req, res) => {
+    const userEmail = req.user.email;
+    const t = await db.sequelize.transaction();
+
+    try {
+        const user = await db.User.findOne({ where: { email: userEmail } });
+        if (!user) return res.status(404).json({ error: "User is not found" });
+
+        if (!user.isAdmin) return res.status(403).json({ error: 'User is not authorized' });
+
+        await db.Image.destroy({
+            where: {},
+            truncate: true,
+            transaction: t,
+        });
+
+        await db.ImageGeneration.destroy({
+            where: {},
+            truncate: true,
+            transaction: t,
+        });
+
+        await t.commit();
+        res.status(204).end();
+    } catch (error) {
+        console.error('Error deleting all generated images: ', error);
+        await t.rollback();
+        res.status(500).json({ error: 'Failed to delete all generated images' });
+    }
+};
+
+module.exports = {
+    findAllMyImages,
+    findAllGeneratedImages,
+    findAllImages,
+    findGeneratedImageById,
+    findImageById,
+    createImg2img,
+    createTxt2img,
+    deleteImageById,
+    deleteAllImages,
+    deleteGeneratedImageById,
+    deleteAllMyGeneratedImages,
+    deleteAllGeneratedImages
+};

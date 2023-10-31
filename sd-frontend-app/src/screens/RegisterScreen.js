@@ -22,6 +22,7 @@ export default function RegisterScreen({ navigation }) {
   const [registrationStatus, setRegistrationStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
 
+  // Signup by email and password
   const onSignUpPressed = async () => {
     const firstnameError = nameValidator(firstname.value);
     const lastnameError = nameValidator(lastname.value);

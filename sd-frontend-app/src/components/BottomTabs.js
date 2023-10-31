@@ -1,17 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
-import Background from './BackgroundPublic'
-import Logo from './Logo'
-import Header from './Header'
-import Paragraph from './Paragraph'
-import Button from './Button'
+import React from 'react';
 import Home from '../screens/Home';
-import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DrawerContent } from './DrawerContent';
-import { getMyImages } from '../api/images';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { isTokenExpired } from '../utils/isAuth';
 import Account from '../screens/Account';
 import Album from '../screens/Album';
 import { HelpPage } from '../screens';

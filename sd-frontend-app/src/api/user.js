@@ -27,7 +27,7 @@ api.interceptors.request.use(async (config) => {
 export const getUserByEmail = async (email) => {
     try {
         const response = await api.get("users", { params: { email: email } });
-        if(response.data){
+        if (response.data) {
             const foundUser = response.data[0];
             return foundUser;
         }
@@ -42,6 +42,16 @@ export const updateUser = async (userID, firstname, lastname, oldPassword, newPa
     try {
         const reqBody = { firstname, lastname, oldPassword, newPassword, confirmedPassword };
         const response = await api.put("users/" + userID, reqBody);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/* Delete user by id */
+export const deleteUserById = async (id) => {
+    try {
+        const response = await api.delete(`users/${id}`);
         return response;
     } catch (error) {
         throw error;

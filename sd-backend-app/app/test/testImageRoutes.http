@@ -1,0 +1,218 @@
+// Login as admin
+###
+# @name loginAdmin
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+    "password": "123"
+}
+
+###
+@adminToken = {{loginAdmin.response.body.token}}
+
+// Login as user
+###
+# @name loginUser
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "user@user.com",
+    "password": "123"
+}
+
+###
+@userToken = {{loginUser.response.body.token}}
+
+// Find all image generations (401 Unauthorized)
+###
+GET http://localhost:4848/api/images/generations
+
+// Find all image generations (403 Forbidden)
+###
+GET http://localhost:4848/api/images/generations
+Authorization: Berear {{userToken}}
+
+// Find all image generations
+###
+GET http://localhost:4848/api/images/generations
+Authorization: Berear {{adminToken}}
+
+// Find all admin's generations (401 Unauthorized)
+###
+GET http://localhost:4848/api/images/generations/myGenerations
+
+// Find all user's generations
+###
+GET http://localhost:4848/api/images/generations/myGenerations
+Authorization: Berear {{userToken}}
+
+// Find all admin's generations
+###
+# @name findAllGeneration
+GET http://localhost:4848/api/images/generations/myGenerations
+Authorization: Berear {{adminToken}}
+###
+@generation1ID = {{findAllGeneration.response.body.0.id}}
+
+// Find image generation by id (403 Forbidden)
+###
+GET http://localhost:4848/api/images/generations/{{generation1ID}}
+Authorization: Berear {{userToken}}
+
+// Find image generation by id (401 Unauthorized)
+###
+GET http://localhost:4848/api/images/generations/{{generation1ID}}
+
+// Find image generation by id
+###
+# @name findGeneration
+GET http://localhost:4848/api/images/generations/{{generation1ID}}
+Authorization: Berear {{adminToken}}
+###
+@generatedImage1ID = {{findGeneration.response.body.generatedImage_id}}
+
+// Find all images (401 Unauthorized)
+###
+GET http://localhost:4848/api/images
+
+// Find all images (403 Forbidden)
+###
+GET http://localhost:4848/api/images
+Authorization: Berear {{userToken}}
+
+// Find all images
+###
+GET http://localhost:4848/api/images
+Authorization: Berear {{adminToken}}
+
+// Find image by id (401 Unauthorized)
+###
+GET http://localhost:4848/api/images/{{generatedImage1ID}}
+
+// Find image by id (403 Forbidden)
+###
+GET http://localhost:4848/api/images/{{generatedImage1ID}}
+Authorization: Berear {{userToken}}
+
+// Find image by id
+###
+GET http://localhost:4848/api/images/{{generatedImage1ID}}
+Authorization: Berear {{adminToken}}
+
+// Create image (401 Unauthorized)
+###
+POST http://localhost:4848/api/images/txt2img
+Content-Type: application/json
+
+{
+    "subject": "a young man is smiling outside in sunny day",
+    "artDirection": "realism",
+    "artist": "Ilya Repin"
+}
+
+// Create image (400 Bad Request)
+###
+POST http://localhost:4848/api/images/txt2img
+Authorization: Berear {{userToken}}
+Content-Type: application/json
+
+{
+    "subject": "a young man is smiling outside in sunny day"
+}
+
+// Create image
+###
+# @name generateTxt2img
+POST http://localhost:4848/api/images/txt2img
+Authorization: Berear {{userToken}}
+Content-Type: application/json
+
+{
+    "subject": "a young man is smiling outside in sunny day",
+    "artDirection": "realism",
+    "artist": "Ilya Repin"
+}
+
+###
+@generation2ID = {{generateTxt2img.response.body.id}}
+###
+@generatedImage2ID = {{generateTxt2img.response.body.generatedImage_id}}
+
+// Delete image by id (403 Forbidden)
+###
+DELETE http://localhost:4848/api/images/{{generatedImage2ID}}
+Authorization: Berear {{userToken}}
+
+// Delete image by id (401 Unauthorized)
+###
+DELETE http://localhost:4848/api/images/{{generatedImage2ID}}
+
+// Delete image by id
+###
+DELETE http://localhost:4848/api/images/{{generatedImage2ID}}
+Authorization: Berear {{adminToken}}
+
+// Delete image by id (404 Not Found)
+###
+DELETE http://localhost:4848/api/images/{{generatedImage2ID}}
+Authorization: Berear {{adminToken}}
+
+// Delete image by id (401 Unauthorized)
+###
+DELETE http://localhost:4848/api/images/generations/{{generation2ID}}
+
+// Delete image by id
+###
+DELETE http://localhost:4848/api/images/generations/{{generation2ID}}
+Authorization: Berear {{userToken}}
+
+// Delete image by id (404 Not Found)
+###
+DELETE http://localhost:4848/api/images/generations/{{generation2ID}}
+Authorization: Berear {{userToken}}
+
+// Find all my image generations
+###
+GET http://localhost:4848/api/images/generations/myGenerations
+Authorization: Berear {{userToken}}
+
+// Create image (1)
+###
+POST http://localhost:4848/api/images/txt2img
+Authorization: Berear {{userToken}}
+Content-Type: application/json
+
+{
+    "subject": "a young man is smiling outside in sunny day",
+    "artDirection": "realism",
+    "artist": "Ilya Repin"
+}
+
+// Create image (2)
+###
+POST http://localhost:4848/api/images/txt2img
+Authorization: Berear {{userToken}}
+Content-Type: application/json
+
+{
+    "subject": "a young man is smiling outside in sunny day",
+    "artDirection": "realism",
+    "artist": "Ilya Repin"
+}
+
+// Delete all my image generations (401 Unauthorized)
+###
+DELETE http://localhost:4848/api/images/generations/myGenerations
+
+// Delete all my image generations
+###
+DELETE http://localhost:4848/api/images/generations/myGenerations
+Authorization: Berear {{userToken}}
+
+// Find all my image generations
+###
+GET http://localhost:4848/api/images/generations/myGenerations
+Authorization: Berear {{userToken}}

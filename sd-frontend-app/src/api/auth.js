@@ -3,12 +3,11 @@ import jwt_decode from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from '../config/apiConfig';
 
-/* const API_URL = Platform.OS === 'ios' ? 'http://localhost:4848/api/auth/' : 'http://127.0.0.1:4848/api/auth/'; */
-
 const api = axios.create({
     baseURL: BASE_URL,
 });
 
+// login
 export const login = async (email, password) => {
     try {
         const response = await api.post("auth/login", {
@@ -34,6 +33,7 @@ export const login = async (email, password) => {
     }
 };
 
+// logout
 export const logout = async () => {
     try {
         await AsyncStorage.removeItem("token");
@@ -43,6 +43,7 @@ export const logout = async () => {
     }
 };
 
+// signup
 export const register = async (firstname, lastname, email, password) => {
     try {
         const response = await api.post("auth/signup", {

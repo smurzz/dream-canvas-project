@@ -7,7 +7,7 @@ import { logout } from '../api/auth'
 import { View, ActivityIndicator, StyleSheet, ScrollView } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, Modal, Portal } from 'react-native-paper';
-import { getUserByEmail, updateUser } from '../api/user'
+import { deleteUserById, getUserByEmail, updateUser } from '../api/user'
 import { nameValidator } from '../helpers/nameValidator'
 import { confirmPassValidator, newPassValidator, oldPassValidator } from '../helpers/changePasswordValidator'
 import BackgroundPrivate from '../components/BackgroundPrivate'
@@ -24,6 +24,7 @@ export default function Account({ navigation }) {
   const [newPassword, setNewPassword] = useState({ value: '', error: '' });
   const [confirmedPassword, setConfirmedPassword] = useState({ value: '', error: '' });
   const [updateStatus, setUpdateStatus] = useState({ status: null, message: '' });
+  const [deleteStatus, setDeleteStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
 
   const showModal = () => setVisible(true);
@@ -58,7 +59,7 @@ export default function Account({ navigation }) {
     fetchUserByEmail();
   }, []);
 
-  /* Update user's firstname,lastname or password */
+  /* Update user's firstname, lastname or password */
   const onSavePressed = async () => {
     const firstnameError = nameValidator(firstname.value);
     const lastnameError = nameValidator(lastname.value);
@@ -75,6 +76,7 @@ export default function Account({ navigation }) {
       return;
     }
     setUpdateStatus({ status: null, message: '' });
+    setDeleteStatus({ status: null, message: '' });
     setLoading(true);
     try {
       const response = await updateUser(
@@ -120,6 +122,29 @@ export default function Account({ navigation }) {
 
   /* Delete user account */
   // ToDo
+  const onDeletePressed = async () => {
+    try {
+      const response = await deleteUserById(user.id);
+
+      if (response.status === 204) {
+        await logout();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'StartScreen' }],
+        });
+      } else {
+        setDeleteStatus({ status: 'error', message: response.error });
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setDeleteStatus({ status: 'error', message: error.response.data.error });
+      } else {
+        setDeleteStatus({ status: 'error', message: 'Delete failed. Please try again.' });
+      }
+    }finally {
+      setLoading(false);
+    }
+  }
 
   return (
     user ? (
@@ -128,9 +153,11 @@ export default function Account({ navigation }) {
           {updateStatus.status === 'success' && (
             <Text style={styles.messageSuccess}>{updateStatus.message}</Text>
           )}
-
           {updateStatus.status === 'error' && (
             <Text style={styles.messageError}>{updateStatus.message}</Text>
+          )}
+          {deleteStatus.status === 'error' && (
+            <Text style={styles.messageError}>{deleteStatus.message}</Text>
           )}
           <Header>Personal details</Header>
           <TextInput
@@ -213,7 +240,7 @@ export default function Account({ navigation }) {
                 mode="outlined"
                 style={styles.deleteButton}
                 textColor="red"
-                onPress={hideModal}
+                onPress={onDeletePressed}
               >
                 Delete
               </Button>
@@ -243,7 +270,6 @@ export default function Account({ navigation }) {
           </Button>
         </View>
       </BackgroundPrivate>
-
     ) : (
       <ActivityIndicator size="small" color={theme.colors.primary} />
     )

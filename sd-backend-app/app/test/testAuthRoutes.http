@@ -1,0 +1,90 @@
+// Login as admin (400 Bad Request)
+###
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com"
+}
+
+// Login as admin (401 Unauthorized)
+###
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+     "password": "1234"
+}
+
+// Login as admin
+###
+# @name loginAdminCorrect
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+    "password": "123"
+}
+###
+@adminToken = {{loginAdminCorrect.response.body.token}}
+
+// Signup (409 Conflict)
+###
+POST http://localhost:4848/api/auth/signup
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+    "password": "123"
+}
+
+// Signup (400 Bad Request)
+###
+POST http://localhost:4848/api/auth/signup
+Content-Type: application/json
+
+{
+    "email": "admin",
+    "password": "123"
+}
+
+// Signup (400 Bad Request)
+###
+POST http://localhost:4848/api/auth/signup
+Content-Type: application/json
+
+{
+    "email": "admin2@admin.com",
+    "password": ""
+}
+
+// Signup
+###
+POST http://localhost:4848/api/auth/signup
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+// Fond user by email 
+###
+# @name findUser
+GET http://localhost:4848/api/users?email=user2@user2.com
+Authorization: Bearer {{adminToken}}
+
+###
+@userID = {{findUser.response.body.0.id}}
+
+// Delete created user
+###
+DELETE http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+
+// Delete created user (404 Not Found)
+###
+DELETE http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}

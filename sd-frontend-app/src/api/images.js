@@ -26,7 +26,7 @@ api.interceptors.request.use( async (config) => {
 // get all generated images
 export const getMyImages = async () => {
     try {
-        const response = await api.get("images/myImages");
+        const response = await api.get("images/generations/myGenerations");
         return response.data;
     } catch (error) { 
         console.log("Error by getting my info: ", error);
@@ -43,7 +43,7 @@ export const generateImage = async (subject, artDirection, artist) => {
             artist
         });
         console.log(response.data);
-        return response.data;
+        return response;
     } catch (error) {
         console.log("Error by image generating: ", error.response ? error.response.data.error : error);
         throw error;

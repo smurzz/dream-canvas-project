@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, } from 'react-native';
-import { PhotoGrid } from 'react-native-photo-grid-frame';
 import { isTokenExpired } from '../utils/isAuth';
 import { getMyImages } from '../api/images';
 import { theme } from '../core/theme';
 import BackgroundPrivate from '../components/BackgroundPrivate';
 import Paragraph from '../components/Paragraph';
+import FlatlistImages from '../components/FlatlistImages';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function Album({ navigation }) {
+    const isFocused = useIsFocused();
 
     const [images, setImages] = useState([]);
     const [imagesReady, setImagesReady] = useState(false);
     const [message, setMessage] = useState('');
 
+    // Get all generated images
     useEffect(() => {
-        async function fetchUserInfo() {
+        async function fetchUserImages() {
             try {
                 const isTokenExp = await isTokenExpired();
                 if (!isTokenExp) {
@@ -22,10 +25,19 @@ export default function Album({ navigation }) {
                     if (myImages && myImages.length > 0) {
                         const encodedImagesPromises = myImages.map((generation) => {
                             const base64url = `data:${generation.generatedImage.type};base64,${generation.generatedImage.data}`;
-                            return { url: base64url };
+                            const generationId = generation.id;
+                            const generationIdea = generation.subject;
+                            const generationStyle = generation.artDirection;
+                            return { 
+                                id: generationId,
+                                idea: generationIdea,
+                                style: generationStyle,
+                                url: base64url 
+                            };
                         });
                         setImages(encodedImagesPromises);
                         setImagesReady(true);
+                        console.log(encodedImagesPromises);
                     } else {
                         setMessage("No Images.. Create your first artwork!")
                     }
@@ -37,13 +49,13 @@ export default function Album({ navigation }) {
             }
         }
 
-        fetchUserInfo();
-    }, []);
+        fetchUserImages();
+    }, [isFocused]);
 
     return (
         <BackgroundPrivate>
             {imagesReady ? (
-                <PhotoGrid PhotosList={images} borderRadius={10} />
+                <FlatlistImages data={images}/>
             ) : message ? (
                 <Paragraph>{message}</Paragraph>
             ) : (<ActivityIndicator size="small" color={theme.colors.primary} />)}

@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native'
+import { StyleSheet, View, TouchableOpacity, SafeAreaView, Dimensions, Image } from 'react-native'
 import { Text, RadioButton, Chip, ActivityIndicator } from 'react-native-paper';
-import Background from '../components/BackgroundPublic'
-import Logo from '../components/Logo'
-import Header from '../components/Header'
-import Paragraph from '../components/Paragraph'
-import Button from '../components/Button'
-import StartScreen from './StartScreen'
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { isTokenExpired } from '../utils/isAuth';
-import { generateImage, getMyImages } from '../api/images';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundPrivate from '../components/BackgroundPrivate';
+import Header from '../components/Header';
+import Paragraph from '../components/Paragraph';
+import Button from '../components/Button';
+import TextInput from '../components/TextInput';
+import ImageRadioButton from '../components/ImageRadioButton';
+import { isTokenExpired } from '../utils/isAuth';
+import { getUserByEmail } from '../api/user';
+import { generateImage } from '../api/images';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../core/theme';
-import ImageRadioButton from '../components/ImageRadioButton';
-import artistsInfo from '../helpers/artistsInfo';
 import { promptValidator, styleValidator } from '../helpers/imageGenerationValidator';
-import TextInput from '../components/TextInput';
+import artistsInfo from '../helpers/artistsInfo';
 
 const { width, height } = Dimensions.get('screen');
 
@@ -36,6 +33,7 @@ export default function Home({ navigation }) {
   ];
   const [authorDetails, setAuthorDetails] = useState(null);
   const [artists, setArtists] = useState([]);
+  const [resultImageUrl, setResultImageUrl] = useState('');
 
   const [prompt, setPrompt] = useState({ value: '', error: '' });
   const [selectedStyle, setSelectedStyle] = useState({ value: '', error: '' });
@@ -44,13 +42,14 @@ export default function Home({ navigation }) {
   const [generateImageStatus, setGenerateImageStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
 
+  /* Get user data (first name) for greeting */
   useEffect(() => {
     async function fetchUserInfo() {
       try {
         const isTokenExp = await isTokenExpired();
+        var email = JSON.parse(await AsyncStorage.getItem("email"));
         if (!isTokenExp) {
-          const myInfo = await getMyImages();
-          const authorInfo = myInfo[0].author;
+          const authorInfo = await getUserByEmail(email);
           setAuthorDetails(authorInfo);
         } else {
           navigation.navigate('StartScreen');
@@ -62,7 +61,10 @@ export default function Home({ navigation }) {
     fetchUserInfo();
   }, []);
 
+  /* Set artists array depending on an artistic style */
   useEffect(() => {
+    setSelectedArtist(null);
+
     switch (selectedStyle.value) {
       case "abstractionism":
         setArtists(artistsInfo.abstract);
@@ -100,6 +102,7 @@ export default function Home({ navigation }) {
     }
   }, [selectedStyle.value]);
 
+  /* Generate image by idea, artistic art and artist */
   const onGeneratePressed = async () => {
     const promptError = promptValidator(prompt.value);
     const styleError = styleValidator(selectedStyle.value);
@@ -110,11 +113,16 @@ export default function Home({ navigation }) {
       return;
     }
     setGenerateImageStatus({ status: null, message: '' });
+    setResultImageUrl('');
     setLoading(true);
     try {
       const response = await generateImage(prompt.value, selectedStyle.value, selectedArtist);
 
-      if (response.status === 201) {
+      if (response.status === 201 && response.data) {
+        const base64url = `data:${response.data.generatedImage.type};base64,${response.data.generatedImage.data}`;
+        setResultImageUrl(base64url);
+        console.log(base64url);
+
         setPrompt({ value: '', error: '' });
         setSelectedStyle({ value: '', error: '' });
         setSelectedArtist(null);
@@ -135,10 +143,7 @@ export default function Home({ navigation }) {
 
   return (
     <BackgroundPrivate>
-      <Header>Hello{authorDetails ? `, ${authorDetails.firstname}!` : ", art enthusiast!"}</Header>
-      {/* <Paragraph style={styles.text}>
-        Unleash Your Inner Artist: Create captivating artwork in various styles with ease.
-      </Paragraph> */}
+      <Header>Hello{(authorDetails && authorDetails.firstname) ? `, ${authorDetails.firstname}!` : ", art enthusiast!"}</Header>
       <View style={styles.helpContainer}>
         <Paragraph>🤔 Need Assistance? </Paragraph>
         <TouchableOpacity onPress={() => navigation.navigate('Help')}>
@@ -200,14 +205,19 @@ export default function Home({ navigation }) {
         </View>
       </View>
       )}
-      {loading && (<View style={styles.artistsContainer}>
+      {loading && (<View style={styles.loadingContainer}>
         <Text style={styles.text}>Generating image... It can take some time.</Text>
-        <ActivityIndicator size="small" color={theme.colors.primary} />
+        <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 20 }} />
       </View>)}
       {generateImageStatus.status === 'success' && (
-        <Text style={styles.messageSuccess}>{generateImageStatus.message}</Text>
+        <View style={styles.container}>
+          <Text style={styles.messageSuccess}>{generateImageStatus.message}</Text>
+          <Image
+            source={{ uri: resultImageUrl }}
+            style={{ width: '100%', height: 400 }}
+          />
+        </View>
       )}
-
       {generateImageStatus.status === 'error' && (
         <Text style={styles.messageError}>{generateImageStatus.message}</Text>
       )}
@@ -246,6 +256,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center'
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 15,
   },
   chipWrapper: {
     marginRight: 5,

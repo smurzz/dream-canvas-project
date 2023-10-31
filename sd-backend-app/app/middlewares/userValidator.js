@@ -26,7 +26,7 @@ exports.userValidator = [
         .withMessage('Lastname must be a string'),
 ];
 
-exports.validate = (req, res, next) => {
+exports.validateUser = (req, res, next) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {

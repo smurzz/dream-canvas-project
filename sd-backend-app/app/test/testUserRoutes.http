@@ -1,0 +1,238 @@
+// Find all users (401 Unauthorized)
+###
+GET http://localhost:4848/api/users
+
+// Login as admin
+###
+# @name loginAdminCorrect
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+    "password": "123"
+}
+
+###
+@adminToken = {{loginAdminCorrect.response.body.token}}
+
+// Find all users
+###
+GET http://localhost:4848/api/users
+Authorization: Bearer {{adminToken}}
+
+// Login as user
+###
+# @name loginUserCorrect
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "user@user.com",
+    "password": "123"
+}
+
+###
+@userToken = {{loginUserCorrect.response.body.token}}
+
+// Find all users (403 Forbidden)
+###
+GET http://localhost:4848/api/users
+Authorization: Bearer {{userToken}}
+
+// Create user by user (403 Forbidden)
+###
+POST http://localhost:4848/api/users
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+// Create user by admin (400 Bad Request)
+###
+POST http://localhost:4848/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+// Create user by admin 
+###
+# @name createUser
+POST http://localhost:4848/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+###
+@userID = {{createUser.response.body.id}}
+
+// Find user by id (403 Forbidden)
+###
+GET http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{userToken}}
+
+// Find user by id (401 Unauthorized)
+###
+GET http://localhost:4848/api/users/{{userID}}
+
+// Find user by id
+###
+GET http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+
+// Update user (403 Forbidden)
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+// Update user (401 Unauthorized)
+###
+PUT http://localhost:4848/api/users/{{userID}}
+
+// Update user (400 Bad Request)
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "firstname": 123
+}
+
+// Update user
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "firstname": "user2",
+    "lastname": "user2"
+}
+
+// Change password (400 Bad Request)
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "oldPassword": "1234",
+    "newPassword": "1234",
+    "confirmedPassword": "1234"
+}
+
+// Change password (400 Bad Request)
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "oldPassword": "123",
+    "newPassword": "123",
+    "confirmedPassword": "1234"
+}
+
+// Change password (400 Bad Request)
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "oldPassword": "123"
+}
+
+// Login as user2
+###
+# @name loginUser2
+
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+###
+@user2Token = {{loginUser2.response.body.token}}
+
+// Change password
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{user2Token}}
+Content-Type: application/json
+
+{
+    "oldPassword": "123",
+    "newPassword": "1234",
+    "confirmedPassword": "1234"
+}
+
+// Login as user2 (401 Unauthorized)
+###
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+// Change password by admin
+###
+PUT http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "oldPassword": "1234",
+    "newPassword": "123",
+    "confirmedPassword": "123"
+}
+
+// Login as user2
+###
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "user2@user2.com",
+    "password": "123"
+}
+
+###
+@user2Token = {{loginUser2.response.body.token}}
+
+// Delete user (401 Unauthorized)
+###
+DELETE http://localhost:4848/api/users/{{userID}}
+
+// Delete user (403 Forbidden)
+###
+DELETE http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{userToken}}
+
+// Delete user
+###
+DELETE http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{user2Token}}
+
+// Delete user (404 Not Found)
+###
+DELETE http://localhost:4848/api/users/{{userID}}
+Authorization: Bearer {{user2Token}}
