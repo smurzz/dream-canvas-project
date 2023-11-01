@@ -47,4 +47,8 @@ git clone https://github.com/smurzz/dream-canvas-project.git
 - For web: Run `npm run web`
 
 ## Requirements:
-Before using the app, ensure that you have all the necessary dependencies installed locally for the Node.js backend, React Native for the frontend, and a MySQL database. 
+Before using the app, ensure that you have all the necessary dependencies installed locally:
+- Stable Diffusion (generative AI)
+- Node.js (backend); 
+- React Native (frontend);
+- MySQL (database). 
