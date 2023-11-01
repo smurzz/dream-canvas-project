@@ -7,6 +7,19 @@ import { theme } from '../core/theme';
 import { Text, Divider } from 'react-native-paper';
 
 export default function HelpPage({ navigation }) {
+    const stylesList = [
+        { key: 'Abstractionism' },
+        { key: 'Classicism' },
+        { key: 'Cubism' },
+        { key: 'Expressionism' },
+        { key: 'Impressionism' },
+        { key: 'Minimalism' },
+        { key: 'Pop-art' },
+        { key: 'Realism' },
+        { key: 'Renaissance' },
+        { key: 'Surrealism' },
+    ];
+    
     return (
         <BackgroundPrivate>
             <View style={styles.title}>
@@ -20,30 +33,17 @@ export default function HelpPage({ navigation }) {
                 </Paragraph>
             </View>
             <Divider />
-            <View style={{ marginVertical: 10 }}>
+            <SafeAreaView style={{ marginVertical: 10 }}>
                 <Text variant="titleMedium" color={theme.colors.text}>2. Select Artistic Style:</Text>
                 <Paragraph style={styles.text}>
                     Choose an artistic direction from the options below. Your artwork will be created in this style:
                 </Paragraph>
-                <SafeAreaView style={{ flex: 1 }}>
-                    <FlatList
-                        style={styles.list}
-                        data={[
-                            { key: 'Abstractionism' },
-                            { key: 'Classicism' },
-                            { key: 'Cubism' },
-                            { key: 'Expressionism' },
-                            { key: 'Impressionism' },
-                            { key: 'Minimalism' },
-                            { key: 'Pop-art' },
-                            { key: 'Realism' },
-                            { key: 'Renaissance' },
-                            { key: 'Surrealism' },
-                        ]}
-                        renderItem={({ item }) => <Text style={styles.listItem}>   • {item.key}</Text>}
-                    />
-                </SafeAreaView>
-            </View>
+                <FlatList
+                    style={styles.list}
+                    data={stylesList}
+                    renderItem={({ item }) => <Text style={styles.listItem}>   • {item.key}</Text>}
+                />
+            </SafeAreaView>
             <Divider />
             <View style={{ marginVertical: 10 }}>
                 <Text variant="titleMedium" color={theme.colors.text}>3. Explore Inspiring Artists:</Text>

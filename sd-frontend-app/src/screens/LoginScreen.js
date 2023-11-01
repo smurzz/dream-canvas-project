@@ -19,7 +19,7 @@ export default function LoginScreen({ navigation }) {
   const [loginStatus, setLoginStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
 
-  // Login by email and password
+  // Login 
   const onLoginPressed = async () => {
     const emailError = emailValidator(email.value);
     const passwordError = passwordValidator(password.value);
@@ -40,12 +40,10 @@ export default function LoginScreen({ navigation }) {
           routes: [{ name: 'BottomTabs' }],
         })
       } else {
-        console.log(response);
         setLoginStatus({ status: 'error', message: response.data.error });
       }
     } catch (error) {
-      console.log(error);
-      if(error.response && (error.response.status === 400 || error.response.status === 404)){
+      if(error.response && (error.response.status === 400 || error.response.status === 401 || error.response.status === 404)){
         setLoginStatus({ status: 'error', message: error.response.data.error });
       } else {
         setLoginStatus({ status: 'error', message: 'Login failed. Please try again.' });

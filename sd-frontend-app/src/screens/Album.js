@@ -28,16 +28,15 @@ export default function Album({ navigation }) {
                             const generationId = generation.id;
                             const generationIdea = generation.subject;
                             const generationStyle = generation.artDirection;
-                            return { 
+                            return {
                                 id: generationId,
                                 idea: generationIdea,
                                 style: generationStyle,
-                                url: base64url 
+                                url: base64url
                             };
                         });
                         setImages(encodedImagesPromises);
                         setImagesReady(true);
-                        console.log(encodedImagesPromises);
                     } else {
                         setMessage("No Images.. Create your first artwork!")
                     }
@@ -55,7 +54,7 @@ export default function Album({ navigation }) {
     return (
         <BackgroundPrivate>
             {imagesReady ? (
-                <FlatlistImages data={images}/>
+                <FlatlistImages data={images} />
             ) : message ? (
                 <Paragraph>{message}</Paragraph>
             ) : (<ActivityIndicator size="small" color={theme.colors.primary} />)}
