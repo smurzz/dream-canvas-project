@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlatList, Image, SafeAreaView, StyleSheet, TouchableOpacity } from 'react-native';
 import ImageModal from './ImageModal';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function FlatlistImages({ data }) {
     const [visible, setIsVisible] = useState(false);

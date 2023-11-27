@@ -8,5 +8,6 @@ export const theme = {
     primary: '#124559',
     secondary: '#e6e6fa',
     error: '#f13a59',
+    tabInactive: '#9b9d9e'
   },
 }

@@ -53,5 +53,13 @@
   <string>UIStatusBarStyleDefault</string>
   <key>CADisableMinimumFrameDurationOnPhone</key>
   <true/>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>DreamCanvas would like access to your photo gallery</string>
+  <key>NSCameraUsageDescription</key>
+  <string>DreamCanvas would like to use your camera</string>
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>DreamCanvas would like to save photos to your photo gallery</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>DreamCanvas would like to use your microphone (for videos)</string>
 </dict>
 </plist>
