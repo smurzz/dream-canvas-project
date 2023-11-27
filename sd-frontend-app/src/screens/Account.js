@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Header from '../components/Header'
-import Paragraph from '../components/Paragraph'
 import Button from '../components/Button'
 import TextInput from '../components/TextInput';
 import { logout } from '../api/auth'
-import { View, ActivityIndicator, StyleSheet, ScrollView } from 'react-native'
+import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, Modal, Portal } from 'react-native-paper';
 import { deleteUserById, getUserByEmail, updateUser } from '../api/user'
@@ -13,6 +12,8 @@ import { confirmPassValidator, newPassValidator, oldPassValidator } from '../hel
 import BackgroundPrivate from '../components/BackgroundPrivate'
 import { isTokenExpired } from '../utils/isAuth';
 import { theme } from '../core/theme';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function Account({ navigation }) {
 
@@ -26,38 +27,48 @@ export default function Account({ navigation }) {
   const [updateStatus, setUpdateStatus] = useState({ status: null, message: '' });
   const [deleteStatus, setDeleteStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
   /* Get user data */
-  useEffect(() => {
-    async function fetchUserByEmail() {
-      try {
-        const isTokenExp = await isTokenExpired();
-        var email = JSON.parse(await AsyncStorage.getItem("email"));
-        if (!isTokenExp) {
-          const user = await getUserByEmail(email);
-          if (user) {
-            setUser(user);
-            if (user.firstname && user.lastname) {
-              setFirstname({ value: user.firstname, error: '' });
-              setLastname({ value: user.lastname, error: '' });
-            } else {
-              setFirstname({ value: '', error: '' });
-              setLastname({ value: '', error: '' });
-            }
+  const fetchUserByEmail = useCallback(async () => {
+    try {
+      const isTokenExp = await isTokenExpired();
+      var email = JSON.parse(await AsyncStorage.getItem("email"));
+      if (!isTokenExp) {
+        const user = await getUserByEmail(email);
+        if (user) {
+          setUser(user);
+          if (user.firstname && user.lastname) {
+            setFirstname({ value: user.firstname, error: '' });
+            setLastname({ value: user.lastname, error: '' });
+          } else {
+            setFirstname({ value: '', error: '' });
+            setLastname({ value: '', error: '' });
           }
-        } else {
-          navigation.navigate('StartScreen');
         }
-      } catch (error) {
-        console.error('Error fetching user:', error);
+      } else {
+        navigation.navigate('Start');
       }
+    } catch (error) {
+      console.error('Error fetching user:', error);
     }
+  }, [navigation]);
 
+  useEffect(() => {
     fetchUserByEmail();
-  }, []);
+  }, [fetchUserByEmail, useIsFocused]);
+
+  /* Reload data by refreshing */
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setTimeout(async () => {
+        await fetchUserByEmail();
+        setRefreshing(false);
+    }, 2000);
+}, [fetchUserByEmail]);
 
   /* Update user's firstname, lastname or password */
   const onSavePressed = async () => {
@@ -113,7 +124,7 @@ export default function Account({ navigation }) {
       await logout();
       navigation.reset({
         index: 0,
-        routes: [{ name: 'StartScreen' }],
+        routes: [{ name: 'Start' }],
       });
     } catch (error) {
       throw error;
@@ -121,7 +132,6 @@ export default function Account({ navigation }) {
   }
 
   /* Delete user account */
-  // ToDo
   const onDeletePressed = async () => {
     try {
       const response = await deleteUserById(user.id);
@@ -130,7 +140,7 @@ export default function Account({ navigation }) {
         await logout();
         navigation.reset({
           index: 0,
-          routes: [{ name: 'StartScreen' }],
+          routes: [{ name: 'Start' }],
         });
       } else {
         setDeleteStatus({ status: 'error', message: response.error });
@@ -141,15 +151,15 @@ export default function Account({ navigation }) {
       } else {
         setDeleteStatus({ status: 'error', message: 'Delete failed. Please try again.' });
       }
-    }finally {
+    } finally {
       setLoading(false);
     }
   }
 
   return (
     user ? (
-      <BackgroundPrivate>
-        <View>
+      <BackgroundPrivate refreshing={refreshing} onRefresh={onRefresh}>
+        <View style={styles.container}>
           {updateStatus.status === 'success' && (
             <Text style={styles.messageSuccess}>{updateStatus.message}</Text>
           )}
@@ -187,7 +197,7 @@ export default function Account({ navigation }) {
             editable={!loading}
           />
         </View>
-        <View>
+        <View style={styles.container}>
           <Header>Password</Header>
           <TextInput
             label="Old password"
@@ -219,8 +229,6 @@ export default function Account({ navigation }) {
             secureTextEntry
             editable={!loading}
           />
-        </View>
-        <View>
           <Button
             mode="outlined"
             onPress={onSavePressed}
@@ -228,30 +236,14 @@ export default function Account({ navigation }) {
             Save
           </Button>
         </View>
-        <View>
-          <Header>Delete account</Header>
-          <Portal>
-            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={styles.modal}>
-              <Header>Are you sure you want to delete your account?</Header>
-              <Paragraph style={{ textAlign: 'left' }}>This action is irreversible and will result in the permanent
-                deletion of all your personal information, as well as all the images you've created. Once deleted, this data cannot
-                be recovered.</Paragraph>
-              <Button
-                mode="outlined"
-                style={styles.deleteButton}
-                textColor="red"
-                onPress={onDeletePressed}
-              >
-                Delete
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={hideModal}
-              >
-                Cancel
-              </Button>
-            </Modal>
-          </Portal>
+        <View style={styles.container}>
+          <Button
+            mode="outlined"
+            onPress={onLogoutPressed}
+            header='Delete '
+          >
+            Logout
+          </Button>
           <Button
             mode="outlined"
             style={styles.deleteButton}
@@ -261,14 +253,18 @@ export default function Account({ navigation }) {
             Delete my account
           </Button>
         </View>
-        <View>
-          <Button
-            mode="outlined"
-            onPress={onLogoutPressed}
-          >
-            Logout
-          </Button>
-        </View>
+        <ConfirmationModal
+          visible={visible}
+          hideModal={hideModal}
+          header='Are you sure you want to delete your account?'
+          paragraph='This action is irreversible and will result in the permanent deletion of all your personal information, as well as all the images you have created. Once deleted, this data cannot be recovered.'
+          onConfirmPressed={onDeletePressed}
+          onCancelPressed={hideModal}
+          confirmLabel='Delete'
+          cancelLabel='Cancel'
+          errorMessage={deleteStatus}
+          loading={loading}
+        />
       </BackgroundPrivate>
     ) : (
       <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -278,10 +274,10 @@ export default function Account({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    width: '100%',
-    /* paddingHorizontal: 20, */
-    paddingBottom: 20,
+    marginVertical: 10,
+    borderRadius: 10,
+    backgroundColor: theme.colors.secondary,
+    padding: 10
   },
   modal: {
     backgroundColor: 'white',
