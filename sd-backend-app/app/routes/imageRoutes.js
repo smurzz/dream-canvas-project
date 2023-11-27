@@ -15,6 +15,8 @@ const {
     deleteAllMyGeneratedImages,
     deleteAllImages,
     deleteAllGeneratedImages,
+    createImg2imgSDAPI,
+    createTxt2imgSDAPI,
 } = require("../controllers/imageController");
 
 // GET
@@ -31,7 +33,11 @@ router.get("/:imageID", isAuth, findImageById);
 // POST
 router.post("/img2img", isAuth, multer.single("file"), imageGenerationValidator, validate, createImg2img);
 
+router.post("/sd-api/img2img", isAuth, multer.single("file"), imageGenerationValidator, validate, createImg2imgSDAPI);
+
 router.post("/txt2img", isAuth, imageGenerationValidator, validate, createTxt2img);
+
+router.post("/sd-api/txt2img", isAuth, imageGenerationValidator, validate, createTxt2imgSDAPI);
 
 // DELETE
 router.delete("/:imageID", isAuth, deleteImageById);
