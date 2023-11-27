@@ -5,9 +5,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { theme } from './src/core/theme';
 import { isTokenExpired } from './src/utils/isAuth';
-
-import { StartScreen, LoginScreen, RegisterScreen, HelpPage, Home } from './src/screens';
-import BottomTabs from './src/components/BottomTabs';
+import { Start, Login, Register, Help, Generate } from './src/screens';
+import HomeBottomTabs from './src/components/HomeBottomTabs';
 
 const Stack = createStackNavigator();
 
@@ -32,24 +31,27 @@ export default function App() {
     <Provider theme={theme}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName={tokenExpired ? 'StartScreen' : 'BottomTabs'}
+          initialRouteName={tokenExpired ? 'Start' : 'DreamCanvas'}
           screenOptions={{
-            headerShown: false,
+            /* headerShown: true, 
+            headerStyle: {
+              backgroundColor: theme.colors.secondary,
+            }, */
           }}
         >
-          <Stack.Screen name="StartScreen" component={StartScreen} />
-          <Stack.Screen name="LoginScreen" component={LoginScreen} />
-          <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
-          <Stack.Screen name="BottomTabs" component={BottomTabs} />
-          <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="HelpPage" component={HelpPage} />
+          <Stack.Screen name="Start" options={{headerShown: false}} component={Start} />
+          <Stack.Screen name="Login" options={{headerShown: false}} component={Login} />
+          <Stack.Screen name="Register" options={{headerShown: false}} component={Register} />
+          <Stack.Screen name="DreamCanvas" component={HomeBottomTabs} />
+          <Stack.Screen name="Generate" component={Generate} />
+          <Stack.Screen name="Help" component={Help} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
   );
 }
 
-// "VirtualizedLists should never..." Error fixer
+// "VirtualizedLists should never..." Error fixer 
 if (__DEV__) {
   const ignoreWarns = ["VirtualizedLists should never be nested inside plain ScrollViews"];
 
