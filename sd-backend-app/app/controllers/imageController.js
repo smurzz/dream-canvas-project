@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const { db } = require('../config/dbConfig');
 const { default: axios } = require('axios');
+const config = require('../config/config');
+require('dotenv').config();
 
 // FIND
 const findAllMyImages = async (req, res) => {
@@ -107,26 +109,19 @@ const findAllImages = async (req, res) => {
     }
 };
 const findImageById = async (req, res) => {
-    const userEmail = req.user.email;
+    /* const userEmail = req.user.email; */
     const imageId = req.params.imageID;
 
     try {
-        const author = await db.User.findOne({ where: { email: userEmail } });
-        if (!author) return res.status(404).json({ error: "User is not found" });
+        const image = await db.Image.findByPk(imageId);
 
-        if (author.isAdmin) {
-            const image = await db.Image.findByPk(imageId);
-
-            if (!image) {
-                return res.status(404).json({ error: 'Image not found' });
-            }
-
-            res.setHeader('Content-Type', image.type);
-            res.setHeader('Content-Disposition', `inline; filename="${image.name}"`);
-            res.status(200).send(image.data);
-        } else {
-            res.status(403).json({ error: 'User is not authorized' });
+        if (!image) {
+            return res.status(404).json({ error: 'Image not found' });
         }
+
+        res.setHeader('Content-Type', image.type);
+        res.setHeader('Content-Disposition', `inline; filename="${image.name}"`);
+        res.status(200).send(image.data);
     } catch (error) {
         console.error('Error getting image by ID:', error);
         res.status(500).json({ error: 'Failed to get the image by ID' });
@@ -243,6 +238,205 @@ const createTxt2img = async (req, res) => {
             type: "image/png",
             name: `dream-canvas-${Date.now()}`,
             data: imageDataBuffer,
+        }, { transaction: t });
+
+        // Create image generation information
+        const newImageGeneration = await db.ImageGeneration.create({
+            subject,
+            artDirection,
+            artist,
+            author_id: author.id,
+            generatedImage_id: newImage.id
+        }, { transaction: t });
+
+        // Get generated data
+        const generatedImage = await db.ImageGeneration.findByPk(newImageGeneration.id, {
+            include: [
+                { model: db.Image, as: 'generatedImage', },
+            ],
+            transaction: t
+        });
+
+        // Convert blob data to base64
+        const base64 = Buffer.from(generatedImage.generatedImage.data).toString('base64');
+        generatedImage.generatedImage.data = base64;
+
+        await t.commit();
+        res.status(201).json(generatedImage);
+    } catch (error) {
+        console.error('Error by image generation: ', error);
+        await t.rollback();
+        res.status(500).json({ error: 'Failed to generate an image' });
+    }
+}
+const createImg2imgSDAPI = async (req, res) => {
+    const { mimetype, originalname, filename } = req.file;
+    const { subject, artDirection, artist } = req.body;
+    const userEmail = req.user.email;
+    const ngrok = config.ngrokPublicUrl;
+    const sdapiKey = process.env.KEY_SDAPI;
+
+    const externalServiceUrl = 'https://stablediffusionapi.com/api/v3/img2img';
+    const prompt = `${artDirection}-style painting of ${subject}${artist ? `, by ${artist}` : ''}`;
+
+    const t = await db.sequelize.transaction();
+
+    try {
+        // Find the user and check if the user exists
+        const author = await db.User.findOne({ where: { email: userEmail } }, { transaction: t });
+        if (!author) return res.status(404).json({ error: "User is not found" });
+
+        // Store uploaded image locally and get Base64 data from it
+        if (req.file === undefined) return res.status(400).json({ error: "You must select a file" });
+        const filePath = path.join('app/resources/static/assets/uploads', filename);
+        const fileData = await fs.promises.readFile(filePath);
+
+        // Generate an image with the stable diffusion API
+        let sdResponse = await axios.post(externalServiceUrl, {
+            key: sdapiKey,
+            prompt,
+            negative_prompt: null,
+            init_image: `${ngrok}/${filename}`,
+            width: 512,
+            height: 512,
+            samples: 1,
+            num_inference_steps: 20,
+            safety_checker: "no",
+            enhance_prompt: "no",
+            guidance_scale: 12,
+            strength: 0.45,
+            seed: null,
+            webhook: null,
+            track_id: null
+        });
+
+        if (!sdResponse.data || !sdResponse.data.output) {
+            console.log(sdResponse.error);
+            return res.status(500).json({ error: 'Failed to create an image' });
+        }
+
+        if (sdResponse.data.status === "processing") {
+            // add delay 10 seconds to get a response
+            await delay(10000);
+            
+            const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey });
+                
+            if(fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
+                sdResponse = fetchQueuedResponse;
+            } else {
+                return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
+            }
+        }
+
+        // Create an image
+        const generatedImageUrl =  sdResponse.data.output[0];
+
+        const uploadImage = await db.Image.create({
+            type: mimetype,
+            name: originalname,
+            data: fileData,
+        }, { transaction: t });
+
+        const generatedImageData = await getImageDataFromImagePublicUrl(generatedImageUrl);
+
+        const generatedImage = await db.Image.create({
+            type: "image/png",
+            name: generatedImageData.filenameGeneratedImage,
+            data: generatedImageData.fileDataGeneratedImage,
+        }, { transaction: t });
+
+        // Create image generation information
+        const newImageGeneration = await db.ImageGeneration.create({
+            subject,
+            artDirection,
+            artist,
+            author_id: author.id,
+            generatedImage_id: generatedImage.id,
+            uploadedImage_id: uploadImage.id
+        }, { transaction: t });
+
+        // Get generated data
+        const generation = await db.ImageGeneration.findByPk(newImageGeneration.id, {
+            include: [
+                { model: db.Image, as: 'generatedImage', },
+                { model: db.Image, as: 'uploadedImage', },
+            ],
+            transaction: t
+        });
+
+        // Convert blob data to base64
+        const generatedImageBase64 = Buffer.from(generation.generatedImage.data).toString('base64');
+        generation.generatedImage.data = generatedImageBase64;
+        const uploadedImageBase64 = Buffer.from(generation.uploadedImage.data).toString('base64');
+        generation.uploadedImage.data = uploadedImageBase64;
+
+        await t.commit();
+        res.status(201).json(generation);
+    } catch (error) {
+        console.error('Error creating image:', error);
+        console.log(error.data);
+        res.status(500).json({ error: 'Failed to create an image' });
+    }
+}
+const createTxt2imgSDAPI = async (req, res) => {
+    const { subject, artDirection, artist } = req.body;
+    const userEmail = req.user.email;
+    const ngrok = config.ngrokPublicUrl;
+    const sdapiKey = process.env.KEY_SDAPI;
+
+    const externalServiceUrl = 'https://stablediffusionapi.com/api/v3/text2img';
+    const prompt = `${artDirection}-style painting of ${subject}${artist ? `, by ${artist}` : ''}`;
+
+    const t = await db.sequelize.transaction();
+
+    try {
+        // Find the user and check if the user exists
+        const author = await db.User.findOne({ where: { email: userEmail } }, { transaction: t });
+        if (!author) return res.status(404).json({ error: "User is not found" });
+
+        // Generate an image with the stable diffusion API
+        let sdResponse = await axios.post(externalServiceUrl, {
+            key: sdapiKey,
+            prompt,
+            negative_prompt: null,
+            width: 512,
+            height: 512,
+            samples: 1,
+            num_inference_steps: 20,
+            safety_checker: "no",
+            enhance_prompt: "no",
+            seed: null,
+            guidance_scale: 7.5,
+            webhook: null,
+            track_id: null
+        });
+
+        if (!sdResponse.data || !sdResponse.data.output) {
+            console.log(sdResponse.error);
+            return res.status(500).json({ error: 'Failed to create an image' });
+        }
+
+        if (sdResponse.data.status === "processing") {
+            // add delay 10 seconds to get a response
+            await delay(10000);
+
+            const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey });
+            
+            if(fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
+                sdResponse = fetchQueuedResponse;
+            } else {
+                return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
+            }
+        }
+
+        // Create an image
+        const generatedImageUrl =  sdResponse.data.output[0];
+        const generatedImageData = await getImageDataFromImagePublicUrl(generatedImageUrl);
+
+        const newImage = await db.Image.create({
+            type: "image/png",
+            name: generatedImageData.filenameGeneratedImage,
+            data: generatedImageData.fileDataGeneratedImage,
         }, { transaction: t });
 
         // Create image generation information
@@ -414,6 +608,25 @@ const deleteAllGeneratedImages = async (req, res) => {
     }
 };
 
+async function getImageDataFromImagePublicUrl(generatedImageUrl) {
+    const responseGeneratedImage = await axios.get(generatedImageUrl, { responseType: 'stream' });
+
+    const filenameGeneratedImage = `${Date.now()}-sd-api.png`;
+    const writerGeneratedImage = fs.createWriteStream(`app/resources/static/assets/downloads/${filenameGeneratedImage}`);
+    responseGeneratedImage.data.pipe(writerGeneratedImage);
+
+    // Wait for the finish event
+    await new Promise((resolve, reject) => {
+        writerGeneratedImage.on('finish', resolve);
+        writerGeneratedImage.on('error', reject);
+    });
+
+    const filePathGeneratedImage = path.join('app/resources/static/assets/downloads', filenameGeneratedImage);
+    const fileDataGeneratedImage = await fs.promises.readFile(filePathGeneratedImage);
+
+    return { filenameGeneratedImage, fileDataGeneratedImage };
+}
+
 module.exports = {
     findAllMyImages,
     findAllGeneratedImages,
@@ -421,7 +634,9 @@ module.exports = {
     findGeneratedImageById,
     findImageById,
     createImg2img,
+    createImg2imgSDAPI,
     createTxt2img,
+    createTxt2imgSDAPI,
     deleteImageById,
     deleteAllImages,
     deleteGeneratedImageById,

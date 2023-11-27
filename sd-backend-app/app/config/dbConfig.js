@@ -35,12 +35,15 @@ async function initDB() {
         db.User = require('../models/userModel')(sequelize);
         db.Image = require('../models/imageModel')(sequelize);
         db.ImageGeneration = require('../models/imageGenerationModel')(sequelize);
+        db.Model = require('../models/modelModel')(sequelize);
 
         // Define associations
         db.User.hasMany(db.ImageGeneration, { foreignKey: 'author_id', as: 'imageGenerations' });
         db.ImageGeneration.belongsTo(db.User, { foreignKey: 'author_id', as: 'author' });
         db.ImageGeneration.belongsTo(db.Image, { foreignKey: 'generatedImage_id', as: 'generatedImage' });
         db.ImageGeneration.belongsTo(db.Image, { foreignKey: 'uploadedImage_id', as: 'uploadedImage' });
+        db.Model.belongsTo(db.User, { foreignKey: 'author_id', as: 'author' });
+        db.Model.hasMany(db.Image, { foreignKey: 'uploadedImage_id', as: 'uploadedImage' });
 
         await sequelize.sync();
         console.log('Database synchronized successfully');
