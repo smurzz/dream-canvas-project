@@ -10,6 +10,22 @@ module.exports = (sequelize) => {
         sdapiModelId: {
             type: DataTypes.STRING,
             unique: true,
+        },
+        name: {
+            type: DataTypes.STRING,
+            unique: true,
+            allowNull: false,
+        },
+        category: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        type: {
+            type: DataTypes.ENUM('men', 'female', 'couple', 'null'),
+            allowNull: false,
+        },
+        status: {
+            type: DataTypes.ENUM('ready', 'in_process', 'failed'),
             allowNull: false,
         },
     }, {

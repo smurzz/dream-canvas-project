@@ -26,7 +26,13 @@ async function initDB() {
             host: process.env.MYSQL_HOST,
             username: process.env.MYSQL_USER,
             password: process.env.MYSQL_PASSWORD,
-            database: process.env.MYSQL_DB
+            database: process.env.MYSQL_DB,
+            pool: {
+                max: 5,
+                min: 0,
+                acquire: 30000,
+                idle: 10000,
+            },
         });
 
         db.sequelize = sequelize;
@@ -39,11 +45,13 @@ async function initDB() {
 
         // Define associations
         db.User.hasMany(db.ImageGeneration, { foreignKey: 'author_id', as: 'imageGenerations' });
+        db.User.hasOne(db.Model, { foreignKey: 'author_id', as: 'model' });
         db.ImageGeneration.belongsTo(db.User, { foreignKey: 'author_id', as: 'author' });
         db.ImageGeneration.belongsTo(db.Image, { foreignKey: 'generatedImage_id', as: 'generatedImage' });
         db.ImageGeneration.belongsTo(db.Image, { foreignKey: 'uploadedImage_id', as: 'uploadedImage' });
         db.Model.belongsTo(db.User, { foreignKey: 'author_id', as: 'author' });
-        db.Model.hasMany(db.Image, { foreignKey: 'uploadedImage_id', as: 'uploadedImage' });
+        db.Model.hasMany(db.Image, { foreignKey: 'model_id', as: 'uploadedImages' });
+        db.Image.belongsTo(db.Model, { foreignKey: 'model_id', as: 'model' });
 
         await sequelize.sync();
         console.log('Database synchronized successfully');
