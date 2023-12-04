@@ -50,6 +50,9 @@ export default function Album({ navigation }) {
 
     // reload data by screen visiting
     useEffect(() => {
+        console.log("Refreshed");
+        setImages([]);
+        setImagesReady(false);
         fetchUserImages();
     }, [isFocused, fetchUserImages]);
 

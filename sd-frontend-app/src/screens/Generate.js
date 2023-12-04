@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Image } from 'react-native'
-import { Text, RadioButton, Chip, ActivityIndicator } from 'react-native-paper';
+import { Text, RadioButton, ActivityIndicator } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundPrivate from '../components/BackgroundPrivate';
 import Header from '../components/Header';
@@ -18,6 +18,7 @@ import { promptValidator, styleValidator } from '../helpers/imageGenerationValid
 import artistsInfo from '../helpers/artistsInfo';
 
 import { launchImageLibrary } from 'react-native-image-picker';
+import { getMyModel } from '../api/model';
 
 const { width, height } = Dimensions.get('screen');
 
@@ -37,7 +38,10 @@ export default function Generate({ navigation }) {
     'surrealism',
   ];
   const [authorDetails, setAuthorDetails] = useState(null);
+  const [myModel, setMymodel] = useState(null);
+  const [modelStatus, setModelStatus] = useState(false);
   const [artists, setArtists] = useState([]);
+  const [useMyModel, setUseMyModel] = useState(false);
   const [resultImageUrl, setResultImageUrl] = useState('');
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState('');
@@ -62,7 +66,23 @@ export default function Generate({ navigation }) {
         navigation.navigate('Start');
       }
     } catch (error) {
-      console.error('Error fetching user info:', error);
+      console.error('Error fetching user info: ', error);
+    }
+  }, [navigation]);
+
+  /* Get my model */
+  const fetchModelInfo = useCallback(async () => {
+    try {
+      const isTokenExp = await isTokenExpired();
+      if (!isTokenExp) {
+        const modelData = await getMyModel();
+        setMymodel(modelData);
+        setModelStatus(modelData.status === "ready");
+      } else {
+        navigation.navigate('Start');
+      }
+    } catch (error) {
+      console.log('Error fetching model info:', error);
     }
   }, [navigation]);
 
@@ -110,16 +130,19 @@ export default function Generate({ navigation }) {
   /* Clean generated image by screen visiting */
   useEffect(() => {
     fetchUserInfo();
+    fetchModelInfo();
     setGenerateImageStatus({ status: null, message: '' });
     setResultImageUrl('');
-    setResultImageUrl('');
-  }, [isFocused, fetchUserInfo]);
+    setUploadedImage(null);
+    setUploadedImageUrl('');
+  }, [isFocused, fetchUserInfo, fetchModelInfo]);
 
   /* Reload data by refreshing */
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setTimeout(async () => {
       await fetchUserInfo();
+      await fetchModelInfo();
       setRefreshing(false);
     }, 2000);
   }, [fetchUserInfo]);
@@ -141,10 +164,12 @@ export default function Generate({ navigation }) {
     setLoading(true);
     try {
       var response;
+      const model_id = (myModel && useMyModel) ? myModel.sdapiModelId : null;
+
       if (uploadedImage) {
-        response = await generateImg2ImageSDAPI(uploadedImage, prompt.value, selectedStyle.value, selectedArtist);
+        response = await generateImg2ImageSDAPI(uploadedImage, prompt.value, selectedStyle.value, selectedArtist, model_id);
       } else {
-        response = await generateTxt2ImageSDAPI(prompt.value, selectedStyle.value, selectedArtist);
+        response = await generateTxt2ImageSDAPI(prompt.value, selectedStyle.value, selectedArtist, model_id);
       }
 
       if (response.status === 201 && response.data) {
@@ -201,6 +226,7 @@ export default function Generate({ navigation }) {
 
   return (
     <BackgroundPrivate refreshing={refreshing} onRefresh={onRefresh}>
+      {/* Header */}
       <Header>Hello{(authorDetails && authorDetails.firstname) ? `, ${authorDetails.firstname}!` : ", art enthusiast!"}</Header>
       <View style={styles.helpContainer}>
         <Paragraph>🤔 Need Assistance? </Paragraph>
@@ -210,6 +236,7 @@ export default function Generate({ navigation }) {
           </View>
         </TouchableOpacity>
       </View>
+      {/* Upload Image */}
       <View style={StyleSheet.flatten([styles.container, { backgroundColor: theme.colors.secondary, }])}>
         <Text variant="titleMedium" color={theme.colors.text}>Create Art from Your Photos:</Text>
         <Button
@@ -227,7 +254,8 @@ export default function Generate({ navigation }) {
           style={{ width: '100%', height: 400 }}
         />
       </View>)}
-      <View style={styles.container}>
+      {/* Idea Input */}
+      <View style={StyleSheet.flatten([styles.container, { alignItems: 'left' }])}>
         <Text variant="titleMedium" color={theme.colors.text}>Describe Your Image or Share Your Idea (required):</Text>
         <TextInput
           label="Your idea"
@@ -240,7 +268,16 @@ export default function Generate({ navigation }) {
           errorText={prompt.error}
           editable={!loading}
         />
+        {modelStatus && (<View style={styles.labelRadioContainer}>
+          <Text>Use my Model</Text>
+          <RadioButton.Android
+            value="Use my Model"
+            status={useMyModel ? 'checked' : 'unchecked'}
+            onPress={() => setUseMyModel(!useMyModel)}
+          />
+        </View>)}
       </View>
+      {/* Artistic Style */}
       <View style={StyleSheet.flatten([styles.container, { backgroundColor: theme.colors.secondary, }])}>
         <Text variant="titleMedium" color={theme.colors.text}>Choose an artistic style (required):</Text>
         <RadioButton.Group
@@ -263,6 +300,7 @@ export default function Generate({ navigation }) {
         </RadioButton.Group>
         {selectedStyle.error && (<Text style={styles.messageError}>{selectedStyle.error}</Text>)}
       </View>
+      {/* Artist Style */}
       {selectedStyle.value && (<View style={styles.container}>
         <Text variant="titleMedium" color={theme.colors.text}>Choose an artist style (optional):</Text>
         <View style={styles.artistsContainer}>
@@ -280,10 +318,12 @@ export default function Generate({ navigation }) {
         </View>
       </View>
       )}
+      {/* Loading */}
       {loading && (<View style={styles.loadingContainer}>
         <Text style={styles.text}>Generating image... It can take some time.</Text>
         <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 20 }} />
       </View>)}
+      {/* Result */}
       {generateImageStatus.status === 'success' && (
         <View style={styles.container}>
           <Text style={styles.messageSuccess}>{generateImageStatus.message}</Text>
@@ -296,6 +336,7 @@ export default function Generate({ navigation }) {
       {generateImageStatus.status === 'error' && (
         <Text style={styles.messageError}>{generateImageStatus.message}</Text>
       )}
+      {/* Generate Button */}
       <Button
         mode="contained"
         onPress={onGeneratePressed}

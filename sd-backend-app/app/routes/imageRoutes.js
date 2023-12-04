@@ -1,4 +1,4 @@
-const multer = require("../middlewares/multer");
+const uploadSingleMiddleware = require("../middlewares/uploadSingleMiddleware.js");
 const router = require("express").Router();
 const { imageGenerationValidator, validate } = require("../middlewares/imageGenerationValidator");
 const { isAuth } = require("../controllers/authController");
@@ -31,9 +31,9 @@ router.get("/", isAuth, findAllImages);
 router.get("/:imageID", isAuth, findImageById);
 
 // POST
-router.post("/img2img", isAuth, multer.single("file"), imageGenerationValidator, validate, createImg2img);
+router.post("/img2img", isAuth, uploadSingleMiddleware.single("file"), imageGenerationValidator, validate, createImg2img);
 
-router.post("/sd-api/img2img", isAuth, multer.single("file"), imageGenerationValidator, validate, createImg2imgSDAPI);
+router.post("/sd-api/img2img", isAuth, uploadSingleMiddleware.single("file"), imageGenerationValidator, validate, createImg2imgSDAPI);
 
 router.post("/txt2img", isAuth, imageGenerationValidator, validate, createTxt2img);
 

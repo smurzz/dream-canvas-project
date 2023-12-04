@@ -262,8 +262,8 @@ export default function Account({ navigation }) {
           onCancelPressed={hideModal}
           confirmLabel='Delete'
           cancelLabel='Cancel'
-          errorMessage={deleteStatus}
-          loading={loading}
+/*           errorMessage={deleteStatus}
+          loading={loading} */
         />
       </BackgroundPrivate>
     ) : (

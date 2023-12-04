@@ -1,0 +1,17 @@
+// Login as admin
+###
+# @name loginAdminCorrect
+POST http://localhost:4848/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+    "password": "123"
+}
+###
+@adminToken = {{loginAdminCorrect.response.body.token}}
+
+// Find all models
+###
+GET http://localhost:4848/api/models
+Authorization: Berear {{adminToken}}

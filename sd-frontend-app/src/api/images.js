@@ -50,12 +50,13 @@ export const generateTxt2Image = async (subject, artDirection, artist) => {
     }
 };
 
-export const generateTxt2ImageSDAPI = async (subject, artDirection, artist) => {
+export const generateTxt2ImageSDAPI = async (subject, artDirection, artist, model_id) => {
     try {
         const response = await api.post("images/sd-api/txt2img", {
             subject,
             artDirection,
-            artist
+            artist,
+            ...(model_id ? { model_id } : {}),
         });
         console.log(response.data);
         return response;
@@ -88,13 +89,14 @@ export const generateImg2Image = async (file, subject, artDirection, artist) => 
     }
 };
 
-export const generateImg2ImageSDAPI = async (file, subject, artDirection, artist) => {
+export const generateImg2ImageSDAPI = async (file, subject, artDirection, artist, model_id) => {
     try {
         const data = new FormData();
         data.append('file', file);
         data.append('subject', subject);
         data.append('artDirection', artDirection);
         data.append('artist', artist);
+        model_id && data.append('model_id', model_id);
 
         const requestOptions = {
             headers: {

@@ -14,8 +14,8 @@ export default function ConfirmationModal({
   onCancelPressed,
   confirmLabel,
   cancelLabel,
-  errorMessage,
-  loading,
+/*   errorMessage,
+  loading, */
 }) {
   return (
     <View style={styles.container}>
@@ -23,11 +23,11 @@ export default function ConfirmationModal({
         <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={styles.modal}>
           <Header>{header}</Header>
           <Paragraph style={{ textAlign: 'left' }}>{paragraph}</Paragraph>
-          <Paragraph style={{ textAlign: 'left', color: 'red' }}>{errorMessage}</Paragraph>
+          {/* <Paragraph style={{ textAlign: 'left', color: 'red' }}>{errorMessage}</Paragraph> */}
           <Button mode="outlined" style={styles.confirmButton} onPress={onConfirmPressed}>
             {confirmLabel}
           </Button>
-          <Button mode="outlined" disabled={loading} onPress={onCancelPressed}>
+          <Button mode="outlined" /* disabled={loading} */ onPress={onCancelPressed}>
             {cancelLabel}
           </Button>
         </Modal>

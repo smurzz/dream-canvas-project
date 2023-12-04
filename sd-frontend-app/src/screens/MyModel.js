@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Image } from 'react-native'
 import { Text, RadioButton, Chip, ActivityIndicator } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,150 +18,73 @@ import { promptValidator, styleValidator } from '../helpers/imageGenerationValid
 import artistsInfo from '../helpers/artistsInfo';
 
 import { launchImageLibrary } from 'react-native-image-picker';
+import { createModel, deleteModel, getMyModel } from '../api/model';
+import { categoryValidator, selectedImagesValidator, typeValidator } from '../helpers/modelValidator';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const { width, height } = Dimensions.get('screen');
 
 export default function MyModel({ navigation }) {
-  const artisticStyles = [
-    'abstractionism',
-    'classicism',
-    'cubism',
-    'expressionism',
-    'impressionism',
-    'minimalism',
-    'pop-art',
-    'realism',
-    'renaissance',
-    'surrealism',
-  ];
-  const [authorDetails, setAuthorDetails] = useState(null);
-  const [artists, setArtists] = useState([]);
-  const [resultImageUrl, setResultImageUrl] = useState('');
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const isFocused = useIsFocused();
+  const types = ['male', 'female', 'other'];
 
-  const [prompt, setPrompt] = useState({ value: '', error: '' });
-  const [selectedStyle, setSelectedStyle] = useState({ value: '', error: '' });
-  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [myModel, setMyModel] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState({ value: [], error: '' });
+  const [category, setCategory] = useState({ value: '', error: '' });
+  const [type, setType] = useState({ value: '', error: '' });
+  const [visible, setVisible] = useState(false);
 
-  const [generateImageStatus, setGenerateImageStatus] = useState({ status: null, message: '' });
+  const [trainModelStatus, setTrainModelStatus] = useState({ status: null, message: '' });
   const [loading, setLoading] = useState(false);
 
-  /* Get user data (first name) for greeting */
-  useEffect(() => {
-    async function fetchUserInfo() {
-      try {
-        const isTokenExp = await isTokenExpired();
-        var email = JSON.parse(await AsyncStorage.getItem("email"));
-        if (!isTokenExp) {
-          const authorInfo = await getUserByEmail(email);
-          setAuthorDetails(authorInfo);
-        } else {
-          navigation.navigate('Start');
-        }
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-      }
-    }
-    fetchUserInfo();
-  }, []);
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
 
-  /* Set artists array depending on an artistic style */
-  useEffect(() => {
-    setSelectedArtist(null);
-
-    switch (selectedStyle.value) {
-      case "abstractionism":
-        setArtists(artistsInfo.abstract);
-        break;
-      case "classicism":
-        setArtists(artistsInfo.classic);
-        break;
-      case "cubism":
-        setArtists(artistsInfo.cubism);
-        break;
-      case "expressionism":
-        setArtists(artistsInfo.express);
-        break;
-      case "impressionism":
-        setArtists(artistsInfo.impress);
-        break;
-      case "minimalism":
-        setArtists(artistsInfo.minimal);
-        break;
-      case "pop-art":
-        setArtists(artistsInfo.popart);
-        break;
-      case "realism":
-        setArtists(artistsInfo.realism);
-        break;
-      case "renaissance":
-        setArtists(artistsInfo.renaiss);
-        break;
-      case "surrealism":
-        setArtists(artistsInfo.surreal);
-        break;
-      default:
-        setArtists([]);
-        break;
-    }
-  }, [selectedStyle.value]);
-
-  /* Generate image by idea, artistic art and artist */
-  const onGeneratePressed = async () => {
-    const promptError = promptValidator(prompt.value);
-    const styleError = styleValidator(selectedStyle.value);
-
-    if (promptError || styleError) {
-      setPrompt({ ...prompt, error: promptError });
-      setSelectedStyle({ ...selectedStyle, error: styleError });
-      return;
-    }
-    setGenerateImageStatus({ status: null, message: '' });
-    setResultImageUrl('');
-    setUploadedImage(null);
-    setUploadedImageUrl('');
-    setLoading(true);
+  /* Get my model */
+  const fetchModelInfo = useCallback(async () => {
     try {
-      var response;
-      if (uploadedImage) {
-        response = await generateImg2Image(uploadedImage, prompt.value, selectedStyle.value, selectedArtist);
+      const isTokenExp = await isTokenExpired();
+      if (!isTokenExp) {
+        const modelData = await getMyModel();
+        setMyModel(modelData);
       } else {
-        response = await generateTxt2Image(prompt.value, selectedStyle.value, selectedArtist);
-      }
-
-      if (response.status === 201 && response.data) {
-        const base64url = `data:${response.data.generatedImage.type};base64,${response.data.generatedImage.data}`;
-        setResultImageUrl(base64url);
-        console.log(base64url);
-
-        setPrompt({ value: '', error: '' });
-        setSelectedStyle({ value: '', error: '' });
-        setSelectedArtist(null);
-        setGenerateImageStatus({ status: 'success', message: 'Your image is ready!' });
-      } else {
-        setGenerateImageStatus({ status: 'error', message: response.error });
+        navigation.navigate('Start');
       }
     } catch (error) {
-      if (error.response && (error.response.status === 400 || error.response.status === 404)) {
-        setGenerateImageStatus({ status: 'error', message: error.response.data.error });
-      } else {
-        console.log(error);
-        setGenerateImageStatus({ status: 'error', message: 'Generation failed. Please try again.' });
-      }
-    } finally {
-      setLoading(false);
+      console.log('Error fetching model info:', error);
     }
-  }
+  }, [navigation]);
 
-  const handleImageUpload = () => {
+  /* Clean generated image by screen visiting */
+  useEffect(() => {
+    fetchModelInfo();
+    setTrainModelStatus({ status: null, message: '' });
+  }, [isFocused, fetchModelInfo]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setTimeout(async () => {
+      await fetchModelInfo();
+      setRefreshing(false);
+      setTrainModelStatus({ status: null, message: '' });
+    }, 2000);
+  }, [fetchModelInfo]);
+
+  /* Get uploaded images data */
+  const handleImagesUpload = () => {
     const options = {
+      title: 'Select Images',
+      storageOptions: {
+        skipBackup: true,
+        path: 'images',
+      },
       mediaType: 'photo',
-      minWidth: 512,
-      minHeight: 512,
       maxWidth: 512,
       maxHeight: 512,
       quality: 1,
+      allowsEditing: true,
+      selectionLimit: 10,
     };
 
     launchImageLibrary(options, response => {
@@ -171,134 +95,238 @@ export default function MyModel({ navigation }) {
       } else if (response.customButton) {
         console.log('User tapped custom button: ', response.customButton);
       } else {
-        console.log(response.assets[0]);
-        setUploadedImageUrl({ uri: response.assets[0].uri });
-        setUploadedImage({
-          uri: response.assets[0].uri,
-          type: response.assets[0].type,
-          name: response.assets[0].fileName
+        const selectedImages = response.assets.map(image => {
+          return {
+            uri: image.uri,
+            type: image.type,
+            name: image.fileName
+          }
         });
+        console.log(selectedImages);
+        setUploadedImages({ value: selectedImages, error: '' });
       }
     });
   };
 
-  return (
-    <BackgroundPrivate>
-      <Header>Hello{(authorDetails && authorDetails.firstname) ? `, ${authorDetails.firstname}!` : ", art enthusiast!"}</Header>
+  /* Create Model button */
+  const onCreatePressed = async () => {
+    const categoryError = categoryValidator(category.value);
+    const typeError = typeValidator(type.value);
+    const selectedImagesError = selectedImagesValidator(uploadedImages.value);
+
+    if (categoryError || typeError || selectedImagesError) {
+      setCategory({ ...category, error: categoryError });
+      setType({ ...type, error: typeError });
+      setUploadedImages({ ...uploadedImages, error: selectedImagesError });
+      return;
+    }
+
+    setTrainModelStatus({ status: null, message: '' });
+    setLoading(true);
+    try {
+      const response = await createModel(uploadedImages.value, category.value, type.value);
+
+      if (response.status === 201 && response.data) {
+        setCategory({ value: '', error: '' });
+        setType({ value: '', error: '' });
+        setUploadedImages({ value: [], error: '' });
+        setTrainModelStatus({ status: 'success', message: 'Your model is being processed!' });
+        setMyModel(response.data);
+      } else {
+        setTrainModelStatus({ status: 'error', message: response.error });
+      }
+    } catch (error) {
+      if (error.response && (error.response.status === 400 || error.response.status === 404)) {
+        setTrainModelStatus({ status: 'error', message: error.response.data.error });
+      } else {
+        console.log(error);
+        setTrainModelStatus({ status: 'error', message: 'Generation failed. Please try again.' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* Delete model button */
+  const onDeletePressed = async () => {
+    try {
+      const response = await deleteModel(myModel.id);
+
+      if (response.status === 204) {
+        setMyModel(null);
+        hideModal();
+        setTrainModelStatus({ status: 'success', message: 'Your Model is successfully deleted' });
+      } else {
+        setTrainModelStatus({ status: 'error', message: response.error });
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setTrainModelStatus({ status: 'error', message: error.response.data.error });
+      } else {
+        setTrainModelStatus({ status: 'error', message: 'Delete failed. Please try again.' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const createModelForm = (
+    <BackgroundPrivate refreshing={refreshing} onRefresh={onRefresh}>
+      {/* Header */}
+      <Header>Create Your Own Model!</Header>
       <View style={styles.helpContainer}>
-        <Paragraph>🤔 Need Assistance? </Paragraph>
-        <TouchableOpacity onPress={() => navigation.navigate('Help')}>
-          <View>
-            <MaterialCommunityIcons name="help-circle-outline" color={theme.colors.secondary} size={36} />
-          </View>
-        </TouchableOpacity>
+        <Paragraph style={{ textAlign: 'left', }}>
+          Unleash your creativity effortlessly! Transform your images—your own,
+          your friend's, or even your pet's—into captivating works of art.
+          Follow these steps to start your creative journey:</Paragraph>
       </View>
+      {/* Upload Images */}
       <View style={styles.container}>
-        <Text variant="titleMedium" color={theme.colors.text}>Create Art from Your Photos:</Text>
+        <Text variant="titleMedium" color={theme.colors.text}>
+          Pick 5-10 center-focused images (required):
+        </Text>
+        {uploadedImages.value.length > 0 && (
+          <Paragraph style={{ textAlign: 'left', }}>You selected {uploadedImages.value.length} images.</Paragraph>
+        )}
         <Button
           mode="outlined"
-          onPress={handleImageUpload}
+          onPress={handleImagesUpload}
           style={{ marginTop: 24 }}
           disabled={loading}
         >
-          Upload Image
+          Upload Images
         </Button>
+        {uploadedImages.error && (<Text style={styles.messageError}>{uploadedImages.error}</Text>)}
       </View>
-      {uploadedImageUrl && (<View style={styles.container}>
-        <Image
-          source={uploadedImageUrl}
-          style={{ width: '100%', height: 400 }}
-        />
-      </View>)}
-      <View style={styles.container}>
-        <Text variant="titleMedium" color={theme.colors.text}>Describe Your Image or Share Your Idea (required):</Text>
+      {/* Input Category */}
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: theme.colors.secondary, }])}>
+        <Text variant="titleMedium" color={theme.colors.text}>Specify the object category (person, cat, toy etc.) (required):</Text>
         <TextInput
-          label="Your idea"
+          label="Category"
           mode='outlined'
           multiline={true}
-          value={prompt.value}
+          value={category.value}
           keyboardType="default"
-          onChangeText={(text) => setPrompt({ value: text, error: '' })}
-          error={!!prompt.error}
-          errorText={prompt.error}
+          onChangeText={(text) => setCategory({ value: text, error: '' })}
+          error={!!category.error}
+          errorText={category.error}
           editable={!loading}
         />
       </View>
+      {/* Choose Type */}
       <View style={styles.container}>
-        <Text variant="titleMedium" color={theme.colors.text}>Choose an artistic style (required):</Text>
+        <Text variant="titleMedium" color={theme.colors.text}>Choose the type (required):</Text>
         <RadioButton.Group
-          onValueChange={value => { setSelectedStyle({ value: value, error: '' }) }}
-          value={selectedStyle.value} >
+          onValueChange={value => { setType({ value: value, error: '' }) }}
+          value={type.value} >
           <View style={styles.chipContainer}>
-            {artisticStyles.map((style, index) => (
+            {types.map((t, index) => (
               <View key={index} style={styles.chipWrapper}>
                 <View style={styles.labelRadioContainer}>
-                  <Text>{style}</Text>
+                  <Text>{t}</Text>
                   <RadioButton.Android
-                    value={style}
-                    label={style}
-                    status={selectedStyle === style ? 'checked' : 'unchecked'}
+                    value={t}
+                    label={t}
+                    status={type === t ? 'checked' : 'unchecked'}
                     disabled={loading} />
                 </View>
               </View>
             ))}
           </View>
         </RadioButton.Group>
-        {selectedStyle.error && (<Text style={styles.messageError}>{selectedStyle.error}</Text>)}
+        {type.error && (<Text style={styles.messageError}>{type.error}</Text>)}
       </View>
-      {selectedStyle.value && (<View style={styles.container}>
-        <Text variant="titleMedium" color={theme.colors.text}>Choose an artist style (optional):</Text>
-        <View style={styles.artistsContainer}>
-          <View style={styles.radioButtonContainer}>
-            {artists.map((artist, index) => (
-              <ImageRadioButton
-                key={index}
-                artist={artist}
-                onPress={() => setSelectedArtist(artist.name)}
-                selected={selectedArtist === artist.name}
-                loading={loading}
-              />
-            ))}
-          </View>
-        </View>
-      </View>
-      )}
+      {/* Loading */}
       {loading && (<View style={styles.loadingContainer}>
-        <Text style={styles.text}>Generating image... It can take some time.</Text>
         <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 20 }} />
       </View>)}
-      {generateImageStatus.status === 'success' && (
+      {trainModelStatus.status === 'success' && (
         <View style={styles.container}>
-          <Text style={styles.messageSuccess}>{generateImageStatus.message}</Text>
-          <Image
-            source={{ uri: resultImageUrl }}
-            style={{ width: '100%', height: 400 }}
-          />
+          <Text style={styles.messageSuccess}>{trainModelStatus.message}</Text>
+          <Text>Wait for up to 40 minutes for the magic to happen. Your model
+            details will appear on the screen. Enjoy the creative journey!</Text>
         </View>
       )}
-      {generateImageStatus.status === 'error' && (
-        <Text style={styles.messageError}>{generateImageStatus.message}</Text>
+      {trainModelStatus.status === 'error' && (
+        <Text style={styles.messageError}>{trainModelStatus.message}</Text>
       )}
+      {/* Train Model Button */}
       <Button
         mode="contained"
-        onPress={onGeneratePressed}
+        onPress={onCreatePressed}
         style={{ marginTop: 24 }}
         disabled={loading}
       >
-        Generate
+        Create Model
       </Button>
     </BackgroundPrivate>
+  );
+
+  const modelDataContainer = (
+    <BackgroundPrivate refreshing={refreshing} onRefresh={onRefresh}>
+      {/* Header */}
+      <Header>Your Model</Header>
+      {/* Model Data */}
+      <View style={styles.container}>
+        <Text variant="titleMedium" color={theme.colors.text}>
+          Name: <Text>{myModel && myModel.name}</Text>
+        </Text>
+        <Text variant="titleMedium" color={theme.colors.text}>
+          Category: <Text>{myModel && myModel.category}</Text>
+        </Text>
+        <Text variant="titleMedium" color={theme.colors.text}>
+          Status: <Text>{myModel && myModel.status}</Text>
+        </Text>
+      </View>
+      <View style={StyleSheet.flatten([styles.container, { backgroundColor: theme.colors.secondary, }])}>
+        <Paragraph style={{ textAlign: 'left', }}>
+          Once your model is <Text style={{ fontWeight: 600 }}>ready</Text>
+          , start generating images based on it.
+          When describing your idea, use the subject's name and your model's
+          category. For example:
+        </Paragraph>
+        <Text>'<Text style={{ fontWeight: 600 }}>LkSde person</Text> on 5th Avenue'</Text>
+        <Text>'<Text style={{ fontWeight: 600 }}>nkjrS cat</Text> looking into the camera'</Text>
+      </View>
+      <Button
+        mode="outlined"
+        style={styles.deleteButton}
+        textColor="red"
+        onPress={showModal}
+      >
+        Delete my model
+      </Button>
+      <ConfirmationModal
+        visible={visible}
+        hideModal={hideModal}
+        header='Are you sure you want to delete your model?'
+        paragraph='Once deleted, this data cannot be recovered.'
+        onConfirmPressed={onDeletePressed}
+        onCancelPressed={hideModal}
+        confirmLabel='Delete'
+        cancelLabel='Cancel'
+      /*           errorMessage={deleteStatus}
+                loading={loading} */
+      />
+    </BackgroundPrivate>
+  );
+
+  return (
+    myModel ? modelDataContainer : createModelForm
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#e8eced',
+    padding: 10
   },
   helpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 10
+    marginVertical: 10,
   },
   chipContainer: {
     flexDirection: 'row',
@@ -347,5 +375,9 @@ const styles = StyleSheet.create({
   },
   messageError: {
     color: 'red',
+  },
+  deleteButton: {
+    borderColor: "red",
+    textColor: "red"
   },
 })
