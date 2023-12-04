@@ -7,9 +7,10 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 
 - Sign up for a new account.
 - Log in with existing credentials.
-<img src="sd-frontend-app/public/images/screenshots/signup.png" width="200" height="100">
-![Signup screenshot](sd-frontend-app/public/images/screenshots/signup.png =250x)
-![Login screenshot](sd-frontend-app/public/images/screenshots/login.png "Login screenshot")
+<p float="left">
+    <img src="sd-frontend-app/public/images/screenshots/signup.png" height="350">
+    <img src="sd-frontend-app/public/images/screenshots/login.png" height="350">
+</p>
 
 ##### Image Creation:
 - Generate artistic images from text.
