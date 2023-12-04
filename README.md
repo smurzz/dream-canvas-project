@@ -7,45 +7,62 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 
 - Sign up for a new account.
 - Log in with existing credentials.
-<p float="left">
-    <img src="sd-frontend-app/public/images/screenshots/signup.png" height="350">
-    <img src="sd-frontend-app/public/images/screenshots/login.png" height="350">
+<p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/signup.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/login.png" height="400">
 </p>
 
 ##### Image Creation:
 - Generate artistic images from text.
-    ![Homepage screenshot](sd-frontend-app/public/images/screenshots/generate.png "Homepage screenshot")
-    ![Generated image screenshot](sd-frontend-app/public/images/screenshots/generated_image.png "Generated image screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/generate.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/generated_image.png" height="400">
+    </p>
 - Combine text with uploaded images to create unique compositions.
-    ![Img2img uploaded image screenshot](sd-frontend-app/public/images/screenshots/uploaded_image.png "Img2img uploaded image screenshot")
-    ![Img2img uploaded image screenshot](sd-frontend-app/public/images/screenshots/uploaded_image.png "Img2img result screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/uploaded_image.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/img2img_result.png" height="400">
+    </p>
 - Explore various artistic styles using Stablediffusion AI.
     ![Styles screenshot](sd-frontend-app/public/images/screenshots/artistic_styles.png "Styles screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/artistic_styles.png" height="400">
+    </p>
 
 
 ##### Model Training:
 - Train your own models to customize image generation.
-    ![Mila 1 screenshot](sd-frontend-app/public/images/screenshots/mila_1.jpg "Mila 1 screenshot")
-    ![Mila 2 screenshot](sd-frontend-app/public/images/screenshots/mila_2.JPG "Mila 2 screenshot")
-    ![Create model screenshot](sd-frontend-app/public/images/screenshots/create_model.png "Create model screenshot")
-    ![Created model screenshot](sd-frontend-app/public/images/screenshots/created_model.png "Created model screenshot")
-    ![Create model screenshot](sd-frontend-app/public/images/screenshots/model_image.png "Create model screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/mila_1.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/mila_2.png" height="400">
+    </p>
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/create_model.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/created_model.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/model_image.png" height="400">
+    </p>
 
 ##### Account Management:
 - Change password.
 - Update first and last name.
 - Delete your account.
-    ![Account screenshot](sd-frontend-app/public/images/screenshots/account.png "Account screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/account.png" height="400">
+    </p>
 
 ##### Instructions:
 - Read detailed instructions on using different features.
-    ![Info screenshot](sd-frontend-app/public/images/screenshots/info.png "Info screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/info.png" height="400">
+    </p>
 
 ##### Image Management:
 - View and manage created images.
 - Save or delete images based on your preference.
-    ![Info screenshot](sd-frontend-app/public/images/screenshots/album.png "Info screenshot")
-    ![Image view screenshot](sd-frontend-app/public/images/screenshots/image_view.png "Image view screenshot")
+    <p style="text-align: center;">
+    <img src="sd-frontend-app/public/images/screenshots/album.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/image_view.png" height="400">
+    </p>
 
 ### Technologies Used
 1) Node.js
