@@ -24,7 +24,6 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
     <img src="sd-frontend-app/public/images/screenshots/img2img_result.png" height="400">
     </p>
 - Explore various artistic styles using Stablediffusion AI.
-    ![Styles screenshot](sd-frontend-app/public/images/screenshots/artistic_styles.png "Styles screenshot")
     <p style="text-align: center;">
     <img src="sd-frontend-app/public/images/screenshots/artistic_styles.png" height="400">
     </p>
@@ -33,8 +32,8 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 ##### Model Training:
 - Train your own models to customize image generation.
     <p style="text-align: center;">
-    <img src="sd-frontend-app/public/images/screenshots/mila_1.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/mila_2.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/mila_1.jpg" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/mila_2.JPG" height="400">
     </p>
     <p style="text-align: center;">
     <img src="sd-frontend-app/public/images/screenshots/create_model.png" height="400">
