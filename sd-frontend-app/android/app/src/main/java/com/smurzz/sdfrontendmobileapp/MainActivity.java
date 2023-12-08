@@ -1,4 +1,4 @@
-package com.sdfrontendmobileapp;
+package com.smurzz.sdfrontendmobileapp;
 
 import android.os.Build;
 import android.os.Bundle;

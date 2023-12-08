@@ -3,9 +3,37 @@
     "name": "sd-frontend-mobile-app",
     "slug": "sd-frontend-mobile-app",
     "version": "1.0.0",
-    "assetBundlePatterns": [
-      "**/*"
+    "sdkVersion": "49.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "android": {
+      "package": "com.smurzz.sdfrontendmobileapp"
+    },
+    "ios": {
+      "bundleIdentifier": "com.smurzz.sdfrontendmobileapp"
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "custom photos permission",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to open the camera",
+
+          "//": "Disables the microphone permission",
+          "microphonePermission": false
+        }
+      ]
     ]
-  },
-  "name": "sd-frontend-mobile-app"
+  }
 }

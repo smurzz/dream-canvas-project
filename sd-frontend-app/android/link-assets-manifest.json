@@ -1,0 +1,37 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/arrow_back.png",
+      "sha1": "cd9a618170b139e8cf2d5c5d7b545abb4ef6a6d4"
+    },
+    {
+      "path": "src/assets/arrow_back@2x.png",
+      "sha1": "b39f42e6eb78dacb0c56596c156934d677a60e4c"
+    },
+    {
+      "path": "src/assets/background_dot.png",
+      "sha1": "bff2fe977323aa8d971ba05bd01dcd1aa29dc706"
+    },
+    {
+      "path": "src/assets/background_dot@2x.png",
+      "sha1": "1793bba445af19e6f5b0e00d9edfbdecddf53a8f"
+    },
+    {
+      "path": "src/assets/logo-main-big.png",
+      "sha1": "399a8dd2285eed43189d80c66452fab7b31cff9e"
+    },
+    {
+      "path": "src/assets/logo-main.png",
+      "sha1": "06c132db728bc209042679329dafb611198c415b"
+    },
+    {
+      "path": "src/assets/logo.png",
+      "sha1": "f605fda71ebff7a7f51a220c9e6b890e15f0672d"
+    },
+    {
+      "path": "src/assets/logo@2x.png",
+      "sha1": "545d3201ed079df998e06599e2f115b86d98e38d"
+    }
+  ]
+}

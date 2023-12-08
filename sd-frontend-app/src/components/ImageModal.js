@@ -5,7 +5,8 @@ import { theme } from '../core/theme';
 import Header from './Header';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { deleteGeneratedImageById } from '../api/images';
-import { CameraRoll, } from '@react-native-camera-roll/camera-roll';
+import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
 
 export default function ImageModal({ navigation, visible, setIsVisible, selectedImage }) {
 
@@ -28,7 +29,7 @@ export default function ImageModal({ navigation, visible, setIsVisible, selected
                         if (error.response && error.response.status === 404) {
                             console.log(error.response.data.error);
                         } else {
-                            console.log('Delete failed. Please try again.' );
+                            console.log('Delete failed. Please try again.');
                         }
                     }
                 },
@@ -43,27 +44,77 @@ export default function ImageModal({ navigation, visible, setIsVisible, selected
         ]);
     }, []);
 
-    const savePhoto = useCallback(() => {
-        Alert.alert('Do you want to save this image?', '', [
-            {
-                isPreferred: true,
-                text: 'Yes',
-                onPress: async () => {
-                    const res = await CameraRoll.save(selectedImage.url);
-                    console.log(res);
-                    if (res) {
-                        Alert.alert('Image saved');
-                    }
-                },
-                style: 'default',
-            },
-            {
-                isPreferred: false,
-                text: 'No',
-                onPress: () => { },
-                style: 'destructive',
-            },
-        ]);
+    const savePhoto = useCallback(async () => {
+        console.log("Save!!!!");
+        try {
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            console.log(status);
+            console.log(selectedImage);
+
+            if (status === 'granted') {
+                Alert.alert('Do you want to save this image?', '', [
+                    {
+                        isPreferred: true,
+                        text: 'Yes',
+                        onPress: async () => {
+                            try {
+                                const base64Image = selectedImage.url;
+                                const base64Code = base64Image.split("data:image/png;base64,")[1];
+
+                                const timestamp = new Date().getTime();
+                                const filename = `${FileSystem.documentDirectory}${timestamp}.png`;
+                                await FileSystem.writeAsStringAsync(filename, base64Code, {
+                                    encoding: FileSystem.EncodingType.Base64,
+                                });
+
+                                // Save the file to the library
+                                await MediaLibrary.saveToLibraryAsync(filename);
+
+                                // Clean up the temporary file
+                                await FileSystem.deleteAsync(filename);
+
+                                Alert.alert('Image saved');
+                            } catch (error) {
+                                console.log(error);
+                                Alert.alert('Image not saved');
+                            }
+                        },
+                        style: 'default',
+                    },
+                    {
+                        isPreferred: false,
+                        text: 'No',
+                        onPress: () => { },
+                        style: 'destructive',
+                    },
+                ]);
+            } else {
+                // Handle the case where the user denied permission
+                Alert.alert('Permission denied. Cannot save image.');
+            }
+        } catch (error) {
+            console.error('Error checking or requesting permission:', error);
+            Alert.alert('Error checking or requesting permission. Please try again.');
+        }
+
+        /*             try {
+                        const { status } = await MediaLibrary.requestPermissionsAsync();
+                        if (status !== 'granted') {
+                            Alert.alert('Permission denied. Cannot save image.');
+                            return;
+                        }
+            
+                        const asset = await MediaLibrary.saveToLibraryAsync(selectedImage.url);
+                        console.log(asset);
+                        if (asset) {
+                            Alert.alert('Image saved');
+                        } else {
+                            Alert.alert('Error saving image. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Error saving image', error);
+                        Alert.alert('Error saving image. Please try again.');
+                    } */
     }, []);
 
     return (
