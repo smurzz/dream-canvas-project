@@ -2,20 +2,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { StyleSheet, View, TouchableOpacity, Dimensions, Image } from 'react-native'
 import { Text, RadioButton, Chip, ActivityIndicator } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundPrivate from '../components/BackgroundPrivate';
 import Header from '../components/Header';
 import Paragraph from '../components/Paragraph';
 import Button from '../components/Button';
 import TextInput from '../components/TextInput';
-import ImageRadioButton from '../components/ImageRadioButton';
 import { isTokenExpired } from '../utils/isAuth';
-import { getUserByEmail } from '../api/user';
-import { generateTxt2Image, generateImg2Image } from '../api/images';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../core/theme';
-import { promptValidator, styleValidator } from '../helpers/imageGenerationValidator';
-import artistsInfo from '../helpers/artistsInfo';
+import * as ImagePicker from 'expo-image-picker';
 
 import { launchImageLibrary } from 'react-native-image-picker';
 import { createModel, deleteModel, getMyModel } from '../api/model';
@@ -72,30 +66,30 @@ export default function MyModel({ navigation }) {
   }, [fetchModelInfo]);
 
   /* Get uploaded images data */
-  const handleImagesUpload = () => {
-    const options = {
-      title: 'Select Images',
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-      mediaType: 'photo',
-      maxWidth: 512,
-      maxHeight: 512,
-      quality: 1,
-      allowsEditing: true,
-      selectionLimit: 10,
-    };
+  const handleImagesUpload = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    launchImageLibrary(options, response => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else if (response.customButton) {
-        console.log('User tapped custom button: ', response.customButton);
-      } else {
-        const selectedImages = response.assets.map(image => {
+      if (status !== 'granted') {
+        Alert.alert('Permission to access media library was denied');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: 10,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+/*         const formatedImage = await ImageManipulator.manipulateAsync(
+          result.uri,
+          [],
+          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+        ); */
+
+        const selectedImages = result.assets.map(image => {
           return {
             uri: image.uri,
             type: image.type,
@@ -105,7 +99,9 @@ export default function MyModel({ navigation }) {
         console.log(selectedImages);
         setUploadedImages({ value: selectedImages, error: '' });
       }
-    });
+    } catch (error) {
+      console.error('Error picking an image', error);
+    }
   };
 
   /* Create Model button */
@@ -240,13 +236,6 @@ export default function MyModel({ navigation }) {
       {loading && (<View style={styles.loadingContainer}>
         <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 20 }} />
       </View>)}
-      {trainModelStatus.status === 'success' && (
-        <View style={styles.container}>
-          <Text style={styles.messageSuccess}>{trainModelStatus.message}</Text>
-          <Text>Wait for up to 40 minutes for the magic to happen. Your model
-            details will appear on the screen. Enjoy the creative journey!</Text>
-        </View>
-      )}
       {trainModelStatus.status === 'error' && (
         <Text style={styles.messageError}>{trainModelStatus.message}</Text>
       )}
@@ -266,6 +255,14 @@ export default function MyModel({ navigation }) {
     <BackgroundPrivate refreshing={refreshing} onRefresh={onRefresh}>
       {/* Header */}
       <Header>Your Model</Header>
+      {/* Success message */}
+      {trainModelStatus.status === 'success' && (
+        <View style={styles.container}>
+          <Text style={styles.messageSuccess}>{trainModelStatus.message}</Text>
+          <Text>Wait for up to 40 minutes for the magic to happen. Your model
+            details will appear on the screen. Enjoy the creative journey!</Text>
+        </View>
+      )}
       {/* Model Data */}
       <View style={styles.container}>
         <Text variant="titleMedium" color={theme.colors.text}>

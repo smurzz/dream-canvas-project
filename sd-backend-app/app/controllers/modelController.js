@@ -88,7 +88,6 @@ const webhookStatusModel = async (req, res) => {
                 model_id
             };
 
-            await t.commit();
             res.status(200).json(response);
         } else {
             console.log(training_status);
@@ -99,6 +98,7 @@ const webhookStatusModel = async (req, res) => {
             };
             res.status(200).json(response);
         }
+        await t.commit();
     } catch (error) {
         console.error('Error handling webhook:', error);
         await t.rollback();
@@ -234,8 +234,6 @@ const deleteModelById = async (req, res) => {
         console.error('Error deleting model:', error);
         await t.rollback();
         res.status(500).json({ error: 'Failed to delete an model' });
-    } finally {
-        t.finished && await t.finished();
     }
 }
 

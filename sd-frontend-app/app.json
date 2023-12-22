@@ -27,7 +27,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "custom photos permission",
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos",
           "cameraPermission": "Allow $(PRODUCT_NAME) to open the camera",
 
           "//": "Disables the microphone permission",

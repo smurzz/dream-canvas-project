@@ -304,10 +304,10 @@ const createImg2imgSDAPI = async (req, res) => {
             width: 512,
             height: 512,
             samples: 1,
-            num_inference_steps: 30,
+            num_inference_steps: 20,
             safety_checker: "no",
             enhance_prompt: "no",
-            guidance_scale: 12,
+            guidance_scale: 16,
             strength: 0.45,
             seed: null,
             webhook: null,
@@ -321,13 +321,17 @@ const createImg2imgSDAPI = async (req, res) => {
 
         if (sdResponse.data.status === "processing") {
             // add delay 10 seconds to get a response
-            await delay(10000);
+            console.log("Image in processing: Delay 10 sec");
 
-            const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey });
+            try {
+                const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey }, { timeout: 10000 });
 
-            if (fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
-                sdResponse = fetchQueuedResponse;
-            } else {
+                console.log(fetchQueuedResponse);
+                if (fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
+                    sdResponse = fetchQueuedResponse;
+                }
+            } catch (error) {
+                await t.rollback();
                 return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
             }
         }
@@ -379,6 +383,7 @@ const createImg2imgSDAPI = async (req, res) => {
     } catch (error) {
         console.error('Error creating image:', error);
         console.log(error.data);
+        await t.rollback();
         res.status(500).json({ error: 'Failed to create an image' });
     }
 }
@@ -410,7 +415,7 @@ const createTxt2imgSDAPI = async (req, res) => {
             width: 512,
             height: 512,
             samples: 1,
-            num_inference_steps: 20,
+            num_inference_steps: 30,
             safety_checker: "no",
             enhance_prompt: "no",
             seed: null,
@@ -431,6 +436,17 @@ const createTxt2imgSDAPI = async (req, res) => {
             const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey });
 
             if (fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
+                sdResponse = fetchQueuedResponse;
+            } else {
+                return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
+            }
+        }
+
+        if (!sdResponse.data && sdResponse.config.url) {
+            console.log("TRY AGAIN!!!!!!!!!!!!!!!");
+            const fetchQueuedResponse = await axios.get(sdResponse.config.url, { key: sdapiKey });
+
+            if (fetchQueuedResponse.data.output) {
                 sdResponse = fetchQueuedResponse;
             } else {
                 return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });

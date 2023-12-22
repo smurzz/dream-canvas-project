@@ -17,7 +17,8 @@ import { theme } from '../core/theme';
 import { promptValidator, styleValidator } from '../helpers/imageGenerationValidator';
 import artistsInfo from '../helpers/artistsInfo';
 
-import { launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { getMyModel } from '../api/model';
 
 const { width, height } = Dimensions.get('screen');
@@ -197,31 +198,38 @@ export default function Generate({ navigation }) {
   }
 
   /* Get uploaded image data */
-  const handleImageUpload = () => {
-    const options = {
-      mediaType: 'photo',
-      maxWidth: 512,
-      maxHeight: 512,
-      quality: 1,
-    };
+  const handleImageUpload = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    launchImageLibrary(options, response => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.error) {
-        console.log('ImagePicker Error: ', response.error);
-      } else if (response.customButton) {
-        console.log('User tapped custom button: ', response.customButton);
-      } else {
-        console.log(response.assets[0]);
-        setUploadedImageUrl({ uri: response.assets[0].uri });
+      if (status !== 'granted') {
+        Alert.alert('Permission to access media library was denied');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const formatedImage = await ImageManipulator.manipulateAsync(
+          result.uri,
+          [],
+          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+        );
+
+        setUploadedImageUrl({ uri: result.uri });
         setUploadedImage({
-          uri: response.assets[0].uri,
-          type: response.assets[0].type,
-          name: response.assets[0].fileName
+          uri: formatedImage.uri,
+          type: 'image/png', 
+          name: result.assets[0].fileName
         });
       }
-    });
+    } catch (error) {
+      console.error('Error picking an image', error);
+    }
   };
 
   return (
