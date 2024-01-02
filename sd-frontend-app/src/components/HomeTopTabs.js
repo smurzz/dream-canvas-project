@@ -11,7 +11,6 @@ export default function HomeTopTabs() {
             initialRouteName="Generate"
             screenOptions={{
                 tabBarIndicatorStyle: { backgroundColor: theme.colors.primary },
-                /* tabBarStyle: { backgroundColor: theme.colors.secondary }, */
             }}>
             <Tab.Screen
                 name="Generate"

@@ -5,7 +5,7 @@ import TextInput from '../components/TextInput';
 import { logout } from '../api/auth'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text, Modal, Portal } from 'react-native-paper';
+import { Text} from 'react-native-paper';
 import { deleteUserById, getUserByEmail, updateUser } from '../api/user'
 import { nameValidator } from '../helpers/nameValidator'
 import { confirmPassValidator, newPassValidator, oldPassValidator } from '../helpers/changePasswordValidator'

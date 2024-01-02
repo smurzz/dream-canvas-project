@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import { StyleSheet, View, Dimensions, Text } from 'react-native';
 import { RadioButton, ActivityIndicator } from 'react-native-paper';
-import { WebView } from 'react-native-webview';
 import BackgroundPrivate from '../components/BackgroundPrivate';
 import Header from '../components/Header';
 import Paragraph from '../components/Paragraph';

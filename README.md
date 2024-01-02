@@ -75,6 +75,7 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 - Node.js installed
 - MySQL database set up
 - Stablediffusion API key
+- Expo App
 
 ##### Installation
 1) Clone the repository:
@@ -90,10 +91,10 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 4) Set up the database and configure environment variables in *_.env_*.
 5) Start the application:
     * In _dream-canvas-project/sd-backend-app_ `npm dev run`
-    * In _dream-canvas-project/sd-frontend-app_ `npm run web` or `npm run ios`.
+    * In _dream-canvas-project/sd-frontend-app_ `npx expo start` or `npm run ios`.
 
 ### Usage
-- Launch the app on your mobile device or emulator.
+- Launch the app on your mobile device using Expo App or emulator.
 - Sign up or log in to your account.
 - Explore different features, create images, and manage your account.
 

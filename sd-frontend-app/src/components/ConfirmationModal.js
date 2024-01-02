@@ -14,8 +14,6 @@ export default function ConfirmationModal({
   onCancelPressed,
   confirmLabel,
   cancelLabel,
-/*   errorMessage,
-  loading, */
 }) {
   return (
     <View style={styles.container}>

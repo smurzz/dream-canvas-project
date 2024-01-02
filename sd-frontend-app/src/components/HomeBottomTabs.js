@@ -1,5 +1,4 @@
 import React from 'react';
-import Generate from '../screens/Generate';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Account from '../screens/Account';
