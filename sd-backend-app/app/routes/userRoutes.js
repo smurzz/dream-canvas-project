@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { isAuth } = require("../controllers/authController");
+const { isAuth } = require("../middlewares/isAuthenficated");
 const { createUser, findUserByID, updateUserByID, findUsers, deleteUserByID } = require("../controllers/userController");
 const { updateUserValidator, validateUpdatedUser } = require("../middlewares/updateUserValidator");
 const { userValidator, validateUser } = require("../middlewares/userValidator");

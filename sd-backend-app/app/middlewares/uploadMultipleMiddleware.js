@@ -31,7 +31,6 @@ const uploadMiddleware = (req, res, next) => {
         });
 
         const convertAndSave = async (file) => {
-            console.log(file);
             const outputPath = file.path.substring(0, file.path.lastIndexOf('.'));
             const outputFilename = file.filename.substring(0, file.filename.lastIndexOf('.'))
 

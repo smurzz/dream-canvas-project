@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node dev.js"
+    "dev": "node dev.js",
+    "swagger-autogen": "node swagger.js"
   },
   "keywords": [
     "nodejs",
@@ -16,6 +17,7 @@
   "author": "smurzz",
   "license": "ISC",
   "dependencies": {
+    "and": "^0.0.3",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
@@ -33,7 +35,9 @@
     "puppeteer": "^21.2.1",
     "randomstring": "^1.3.0",
     "sequelize": "^6.33.0",
-    "sharp": "^0.32.6"
+    "sharp": "^0.32.6",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

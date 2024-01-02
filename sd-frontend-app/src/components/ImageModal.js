@@ -89,32 +89,12 @@ export default function ImageModal({ navigation, visible, setIsVisible, selected
                     },
                 ]);
             } else {
-                // Handle the case where the user denied permission
                 Alert.alert('Permission denied. Cannot save image.');
             }
         } catch (error) {
-            console.error('Error checking or requesting permission:', error);
+            console.log('Error checking or requesting permission:', error);
             Alert.alert('Error checking or requesting permission. Please try again.');
         }
-
-        /*             try {
-                        const { status } = await MediaLibrary.requestPermissionsAsync();
-                        if (status !== 'granted') {
-                            Alert.alert('Permission denied. Cannot save image.');
-                            return;
-                        }
-            
-                        const asset = await MediaLibrary.saveToLibraryAsync(selectedImage.url);
-                        console.log(asset);
-                        if (asset) {
-                            Alert.alert('Image saved');
-                        } else {
-                            Alert.alert('Error saving image. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Error saving image', error);
-                        Alert.alert('Error saving image. Please try again.');
-                    } */
     }, []);
 
     return (

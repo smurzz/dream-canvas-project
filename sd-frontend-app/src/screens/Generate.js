@@ -67,7 +67,7 @@ export default function Generate({ navigation }) {
         navigation.navigate('Start');
       }
     } catch (error) {
-      console.error('Error fetching user info: ', error);
+      console.log('Error fetching user info: ', error);
     }
   }, [navigation]);
 
@@ -223,12 +223,12 @@ export default function Generate({ navigation }) {
         setUploadedImageUrl({ uri: result.uri });
         setUploadedImage({
           uri: formatedImage.uri,
-          type: 'image/png', 
-          name: result.assets[0].fileName
+          type: 'image/png',
+          name: 'uploaded_img2img'
         });
       }
     } catch (error) {
-      console.error('Error picking an image', error);
+      console.log('Error picking an image', error);
     }
   };
 
@@ -282,6 +282,9 @@ export default function Generate({ navigation }) {
             value="Use my Model"
             status={useMyModel ? 'checked' : 'unchecked'}
             onPress={() => setUseMyModel(!useMyModel)}
+            accessibilityLabel="Use my model"
+            accessibilityRole="radio"
+            accessibilityStates={useMyModel ? ['checked'] : ['unchecked']}
           />
         </View>)}
       </View>
@@ -290,7 +293,8 @@ export default function Generate({ navigation }) {
         <Text variant="titleMedium" color={theme.colors.text}>Choose an artistic style (required):</Text>
         <RadioButton.Group
           onValueChange={value => { setSelectedStyle({ value: value, error: '' }) }}
-          value={selectedStyle.value} >
+          value={selectedStyle.value} 
+          accessibilityRole="radiogroup">
           <View style={styles.chipContainer}>
             {artisticStyles.map((style, index) => (
               <View key={index} style={styles.chipWrapper}>
@@ -300,7 +304,10 @@ export default function Generate({ navigation }) {
                     value={style}
                     label={style}
                     status={selectedStyle === style ? 'checked' : 'unchecked'}
-                    disabled={loading} />
+                    disabled={loading}
+                    accessibilityLabel={style}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selectedStyle.value === style }}/>
                 </View>
               </View>
             ))}

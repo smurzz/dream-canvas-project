@@ -44,7 +44,7 @@ export default function Album({ navigation }) {
                 navigation.navigate('Start');
             }
         } catch (error) {
-            console.error('Error fetching user info:', error);
+            console.log('Error fetching user info:', error);
         }
     }, [navigation]);
 

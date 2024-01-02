@@ -17,7 +17,6 @@ export default function HomeBottomTabs() {
       initialRouteName="HomeTopTabs"
       activeColor={theme.colors.primary}
       inactiveColor={theme.colors.tabInactive}
-      /* barStyle={{ backgroundColor: theme.colors.secondary }} */
     >
       <Tab.Screen
         name="Home"

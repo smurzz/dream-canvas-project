@@ -53,7 +53,7 @@ export default function Account({ navigation }) {
         navigation.navigate('Start');
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.log('Error fetching user:', error);
     }
   }, [navigation]);
 

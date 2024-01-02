@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { StyleSheet, View, TouchableOpacity, Dimensions, Image } from 'react-native'
-import { Text, RadioButton, Chip, ActivityIndicator } from 'react-native-paper';
+import { StyleSheet, View, Dimensions, Text } from 'react-native';
+import { RadioButton, ActivityIndicator } from 'react-native-paper';
+import { WebView } from 'react-native-webview';
 import BackgroundPrivate from '../components/BackgroundPrivate';
 import Header from '../components/Header';
 import Paragraph from '../components/Paragraph';
@@ -83,12 +84,6 @@ export default function MyModel({ navigation }) {
       });
 
       if (!result.canceled) {
-/*         const formatedImage = await ImageManipulator.manipulateAsync(
-          result.uri,
-          [],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-        ); */
-
         const selectedImages = result.assets.map(image => {
           return {
             uri: image.uri,
@@ -100,7 +95,7 @@ export default function MyModel({ navigation }) {
         setUploadedImages({ value: selectedImages, error: '' });
       }
     } catch (error) {
-      console.error('Error picking an image', error);
+      console.log('Error picking an image', error);
     }
   };
 
@@ -266,7 +261,9 @@ export default function MyModel({ navigation }) {
       {/* Model Data */}
       <View style={styles.container}>
         <Text variant="titleMedium" color={theme.colors.text}>
-          Name: <Text>{myModel && myModel.name}</Text>
+          {/*  Name: <Text>{myModel && myModel.name}</Text> */}
+          <Text variant="titleMedium" color={theme.colors.text}>
+            Name: <Text selectable={true}/>{myModel && myModel.name}</Text>
         </Text>
         <Text variant="titleMedium" color={theme.colors.text}>
           Category: <Text>{myModel && myModel.category}</Text>
@@ -302,8 +299,6 @@ export default function MyModel({ navigation }) {
         onCancelPressed={hideModal}
         confirmLabel='Delete'
         cancelLabel='Cancel'
-      /*           errorMessage={deleteStatus}
-                loading={loading} */
       />
     </BackgroundPrivate>
   );

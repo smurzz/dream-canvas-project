@@ -4,6 +4,7 @@ const { db } = require('../config/dbConfig');
 const { default: axios } = require('axios');
 const config = require('../config/config');
 var randomstring = require('randomstring');
+const { validateUser } = require('../utils/userUtils');
 require('dotenv').config();
 
 // FIND
@@ -109,22 +110,22 @@ const createModel = async (req, res) => {
     const files = req.files;
     const { category, type } = req.body;
     const userEmail = req.user.email;
+
     const ngrok = config.ngrokPublicUrl || process.env.NGROK;
     const sdapiKey = process.env.KEY_SDAPI;
-
-    const externalServiceUrl = 'https://stablediffusionapi.com/api/v3/fine_tune';
+    const externalServiceUrl = process.env.DREAMBOOTH_URL;
 
     const t = await db.sequelize.transaction();
 
     try {
         // Find the user and check if the user exists
-        const author = await db.User.findOne({ where: { email: userEmail } }, { transaction: t });
-        if (!author) return res.status(404).json({ error: "User is not found" });
+        const author = await validateUser(userEmail, t);
 
         const myModel = await db.Model.findOne({ where: { author_id: author.id } });
 
         if (myModel) return res.status(400).json({ error: `Model exists already` });
 
+        // Generate random name for the instance
         const name = randomstring.generate({
             length: 5,
             charset: 'alphabetic'
@@ -167,11 +168,9 @@ const createModel = async (req, res) => {
             instance_prompt,
             class_prompt,
             base_model_id: "midjourney",
-            /* negative_prompt: "lowres, bad anatomy, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry", */
             images,
             seed: "0",
             training_type: typeModel,
-            /* lora_type: "lycoris", */
             max_train_steps: steps.toString(),
             webhook,
         });
@@ -186,9 +185,15 @@ const createModel = async (req, res) => {
         await t.commit();
         res.status(201).json(newModel);
     } catch (error) {
-        console.error('Error creating image:', error);
+        const errMessage = error.response?.data?.message ?? error;
+        console.error('Error creating image:', errMessage);
         await t.rollback();
-        res.status(500).json({ error: 'Failed to create a model' });
+
+        if (error.message === 'User not found') {
+            res.status(404).json({ error: "User is not found" });
+        } else {
+            res.status(500).json({ error: 'Failed to create a model' });
+        }
     }
 }
 

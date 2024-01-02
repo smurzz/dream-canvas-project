@@ -91,6 +91,7 @@ export const generateImg2Image = async (file, subject, artDirection, artist) => 
 
 export const generateImg2ImageSDAPI = async (file, subject, artDirection, artist, model_id) => {
     try {
+        console.log(file);
         const data = new FormData();
         data.append('file', file);
         data.append('subject', subject);

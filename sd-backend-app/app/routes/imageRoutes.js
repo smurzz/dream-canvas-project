@@ -1,7 +1,7 @@
 const uploadSingleMiddleware = require("../middlewares/uploadSingleMiddleware.js");
 const router = require("express").Router();
 const { imageGenerationValidator, validate } = require("../middlewares/imageGenerationValidator");
-const { isAuth } = require("../controllers/authController");
+const { isAuth } = require("../middlewares/isAuthenficated.js");
 const { 
     findAllMyImages, 
     findAllGeneratedImages, 

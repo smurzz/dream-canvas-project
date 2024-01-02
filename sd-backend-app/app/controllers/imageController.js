@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const { db } = require('../config/dbConfig');
-const { default: axios } = require('axios');
+const axios = require('axios');
 const config = require('../config/config');
 require('dotenv').config();
-const negativePrompt = require('../resources/json/negative-prompts');
+const { getPrompt, negativePrompts } = require('../utils/imageUtils');
+const { validateUser } = require('../utils/userUtils');
 
 // FIND
 const findAllMyImages = async (req, res) => {
@@ -252,9 +253,7 @@ const createTxt2img = async (req, res) => {
 
         // Get generated data
         const generatedImage = await db.ImageGeneration.findByPk(newImageGeneration.id, {
-            include: [
-                { model: db.Image, as: 'generatedImage', },
-            ],
+            include: [{ model: db.Image, as: 'generatedImage', }],
             transaction: t
         });
 
@@ -271,40 +270,39 @@ const createTxt2img = async (req, res) => {
     }
 }
 const createImg2imgSDAPI = async (req, res) => {
+    console.log(req.file);
     const { mimetype, originalname, filename } = req.file;
     const { subject, artDirection, artist, model_id } = req.body;
     const userEmail = req.user.email;
-    const ngrok = config.ngrokPublicUrl || process.env.NGROK;
+    const ngrokURL = process.env.NGROK;
     const sdapiKey = process.env.KEY_SDAPI;
 
-    const externalServiceUrl = model_id ? 'https://stablediffusionapi.com/api/v3/dreambooth/img2img' :
-        'https://stablediffusionapi.com/api/v3/img2img';
-    const prompt = `${artDirection}-style painting of ${subject}${artist ? `, by ${artist}` : ''}`;
+    const externalServiceUrl = model_id ? process.env.DREAMBOOTH_IMG2IMG_URL : process.env.IMG2IMG_URL;
+    const prompt = getPrompt(artDirection, subject, artist);
+    const formattedStyle = artDirection === "pop-art" ? artDirection.replace('-', '').toLowerCase() : artDirection;
 
     const t = await db.sequelize.transaction();
 
     try {
         // Find the user and check if the user exists
-        const author = await db.User.findOne({ where: { email: userEmail } }, { transaction: t });
-        if (!author) return res.status(404).json({ error: "User is not found" });
+        const author = await validateUser(userEmail, t);
 
         // Store uploaded image locally and get Base64 data from it
         if (req.file === undefined) return res.status(400).json({ error: "You must select a file" });
         const filePath = path.join('app/resources/static/assets/uploads', filename);
         const fileData = await fs.promises.readFile(filePath);
-        const formattedStyle = artDirection === "pop-art" ? artDirection.replace('-', '').toLowerCase() : artDirection;
 
         // Generate an image with the stable diffusion API
         let sdResponse = await axios.post(externalServiceUrl, {
             key: sdapiKey,
             model_id,
             prompt,
-            negative_prompt: negativePrompt[formattedStyle],
-            init_image: `${ngrok}/${filename}`,
+            negative_prompt: negativePrompts[formattedStyle],
+            init_image: `${ngrokURL}/${filename}`,
             width: 512,
             height: 512,
             samples: 1,
-            num_inference_steps: 20,
+            num_inference_steps: 30,
             safety_checker: "no",
             enhance_prompt: "no",
             guidance_scale: 16,
@@ -314,29 +312,28 @@ const createImg2imgSDAPI = async (req, res) => {
             track_id: null
         });
 
-        if (!sdResponse.data || !sdResponse.data.output) {
-            console.log(sdResponse.error);
-            return res.status(500).json({ error: 'Failed to create an image' });
-        }
-
+        // Delay request, if status "processing"
         if (sdResponse.data.status === "processing") {
-            // add delay 10 seconds to get a response
-            console.log("Image in processing: Delay 10 sec");
+            console.log("Image in processing: Delay 30 sec");
+            const fetchURL = sdResponse.data.fetch_result;
 
-            try {
-                const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey }, { timeout: 10000 });
+            await delay(35000);
+            const fetchQueuedResponse = await axios.post(fetchURL, { key: sdapiKey });
 
-                console.log(fetchQueuedResponse);
-                if (fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
-                    sdResponse = fetchQueuedResponse;
-                }
-            } catch (error) {
+            if (fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
+                sdResponse = fetchQueuedResponse;
+            } else {
                 await t.rollback();
                 return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
             }
         }
 
-        // Create an image
+        if (!sdResponse.data || !sdResponse.data.output) {
+            console.log(sdResponse);
+            return res.status(500).json({ error: 'Failed to get a generated image' });
+        }
+
+        // Create (uploaded and generated) images
         const generatedImageUrl = sdResponse.data.output[0];
 
         const uploadImage = await db.Image.create({
@@ -381,37 +378,39 @@ const createImg2imgSDAPI = async (req, res) => {
         await t.commit();
         res.status(201).json(generation);
     } catch (error) {
-        console.error('Error creating image:', error);
-        console.log(error.data);
+        const errMessage = error.response?.data?.message ?? error;
+        console.error('Error creating by image to image:', errMessage);
         await t.rollback();
-        res.status(500).json({ error: 'Failed to create an image' });
+
+        if (error.message === 'User not found') {
+            res.status(404).json({ error: "User is not found" });
+        } else {
+            res.status(500).json({ error: 'Failed to generate an image' });
+        }
     }
 }
 const createTxt2imgSDAPI = async (req, res) => {
     const { subject, artDirection, artist, model_id } = req.body;
     const userEmail = req.user.email;
-    const ngrok = config.ngrokPublicUrl;
     const sdapiKey = process.env.KEY_SDAPI;
     console.log(req.body);
 
-    const externalServiceUrl = model_id ? 'https://stablediffusionapi.com/api/v3/dreambooth' :
-        'https://stablediffusionapi.com/api/v3/text2img';
-    const prompt = `${artDirection}-style painting of ${subject}${artist ? `, by ${artist}` : ''}, beautiful oil painting`;
+    const externalServiceUrl = model_id ? process.env.DREAMBOOTH_TXT2IMG_URL : process.env.TEXT2IMG_URL;
+    const prompt = getPrompt(artDirection, subject, artist);
+    const formattedStyle = artDirection === "pop-art" ? artDirection.replace('-', '').toLowerCase() : artDirection;
 
     const t = await db.sequelize.transaction();
 
     try {
         // Find the user and check if the user exists
-        const author = await db.User.findOne({ where: { email: userEmail } }, { transaction: t });
-        if (!author) return res.status(404).json({ error: "User is not found" });
-        const formattedStyle = artDirection === "pop-art" ? artDirection.replace('-', '').toLowerCase() : artDirection;
+        const author = await validateUser(userEmail, t);
 
         // Generate an image with the stable diffusion API
         let sdResponse = await axios.post(externalServiceUrl, {
             key: sdapiKey,
             model_id,
             prompt,
-            negative_prompt: negativePrompt[formattedStyle],
+            negative_prompt: negativePrompts[formattedStyle],
             width: 512,
             height: 512,
             samples: 1,
@@ -424,33 +423,26 @@ const createTxt2imgSDAPI = async (req, res) => {
             track_id: null
         });
 
-        if (!sdResponse.data || !sdResponse.data.output) {
-            console.log(sdResponse.error);
-            return res.status(500).json({ error: 'Failed to create an image' });
-        }
-
+        // Delay request, if status "processing"
         if (sdResponse.data.status === "processing") {
-            // add delay 10 seconds to get a response
-            await delay(10000);
+            console.log("Image in processing: Delay 30 sec");
+            const fetchURL = sdResponse.data.fetch_result;
 
-            const fetchQueuedResponse = await axios.post(sdResponse.data.fetch_result, { key: sdapiKey });
-
+            await delay(35000);
+            const fetchQueuedResponse = await axios.post(fetchURL, { key: sdapiKey });
+            
             if (fetchQueuedResponse.data.output && fetchQueuedResponse.data.status === 'success') {
+                console.log(fetchQueuedResponse);
                 sdResponse = fetchQueuedResponse;
             } else {
+                await t.rollback();
                 return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
             }
         }
 
-        if (!sdResponse.data && sdResponse.config.url) {
-            console.log("TRY AGAIN!!!!!!!!!!!!!!!");
-            const fetchQueuedResponse = await axios.get(sdResponse.config.url, { key: sdapiKey });
-
-            if (fetchQueuedResponse.data.output) {
-                sdResponse = fetchQueuedResponse;
-            } else {
-                return res.status(500).json({ error: 'Server is currently high demand. Please try again later.' });
-            }
+        // no date (Error)
+        if (!sdResponse.data || !sdResponse.data.output) {
+            return res.status(500).json({ error: 'Failed to create an image' });
         }
 
         // Create an image
@@ -474,9 +466,7 @@ const createTxt2imgSDAPI = async (req, res) => {
 
         // Get generated data
         const generatedImage = await db.ImageGeneration.findByPk(newImageGeneration.id, {
-            include: [
-                { model: db.Image, as: 'generatedImage', },
-            ],
+            include: [{ model: db.Image, as: 'generatedImage', }],
             transaction: t
         });
 
@@ -487,9 +477,16 @@ const createTxt2imgSDAPI = async (req, res) => {
         await t.commit();
         res.status(201).json(generatedImage);
     } catch (error) {
-        console.error('Error by image generation: ', error);
+        const errMessage = error.response?.data?.message ?? error;
+        // console.error('Error creating by text to image:', errMessage);
+        console.log(errMessage);
         await t.rollback();
-        res.status(500).json({ error: 'Failed to generate an image' });
+
+        if (error.message === 'User not found') {
+            res.status(404).json({ error: "User is not found" });
+        } else {
+            res.status(500).json({ error: 'Failed to generate an text to image' });
+        }
     }
 }
 
@@ -632,6 +629,12 @@ const deleteAllGeneratedImages = async (req, res) => {
     }
 };
 
+// delay
+function delay(duration) {
+    return new Promise(resolve => setTimeout(resolve, duration));
+}
+
+// get image data from URL
 async function getImageDataFromImagePublicUrl(generatedImageUrl) {
     const responseGeneratedImage = await axios.get(generatedImageUrl, { responseType: 'stream' });
 

@@ -33,10 +33,6 @@ export default function App() {
         <Stack.Navigator
           initialRouteName={tokenExpired ? 'Start' : 'DreamCanvas'}
           screenOptions={{
-            /* headerShown: true, 
-            headerStyle: {
-              backgroundColor: theme.colors.secondary,
-            }, */
           }}
         >
           <Stack.Screen name="Start" options={{headerShown: false}} component={Start} />
@@ -49,19 +45,4 @@ export default function App() {
       </NavigationContainer>
     </Provider>
   );
-}
-
-// "VirtualizedLists should never..." Error fixer 
-if (__DEV__) {
-  const ignoreWarns = ["VirtualizedLists should never be nested inside plain ScrollViews"];
-
-  const errorWarn = global.console.error;
-  global.console.error = (...arg) => {
-    for (const error of ignoreWarns) {
-      if (arg[0].startsWith(error)) {
-        return;
-      }
-    }
-    errorWarn(...arg);
-  };
 }

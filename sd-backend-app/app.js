@@ -3,6 +3,8 @@ const cors = require("cors");
 const morgan = require('morgan');
 require('dotenv').config();
 const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const swaggerFile = require('./swagger_output.json');
 
 const database = require('./app/config/dbConfig');
 const modelRoutes = require('./app/routes/modelRoutes');
@@ -30,6 +32,7 @@ app.use('/api/models', modelRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/auth', authRouters);
 app.use('/api/users', userRouters);
+app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 const PORT = process.env.PORT;
 

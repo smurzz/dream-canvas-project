@@ -1,6 +1,6 @@
 const uploadMultipleMiddleware = require("../middlewares/uploadMultipleMiddleware");
 const router = require("express").Router();
-const { isAuth } = require("../controllers/authController");
+const { isAuth } = require("../middlewares/isAuthenficated");
 const { 
     findAllModels, 
     findModelById, 

@@ -6,7 +6,7 @@ export default function BackgroundPrivate({ children, refreshing, onRefresh }) {
 
     return (
         <ImageBackground
-            source={require('../assets/background_dot.png')}
+            source={require('../assets/white.jpg')}
             resizeMode="repeat"
             style={styles.background}
         >
