@@ -20,7 +20,7 @@ ngrok
 
         nodemon({
             script: "./app.js",
-            exec: `NGROK_URL=${url} node`,
+            exec: `cross-env NGROK_URL=${url} node`,
         }).on("start", () => {
             console.log("The application has started");
         }).on("restart", files => {
