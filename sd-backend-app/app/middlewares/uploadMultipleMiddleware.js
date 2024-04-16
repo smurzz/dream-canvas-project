@@ -42,15 +42,13 @@ const uploadMiddleware = (req, res, next) => {
                     .toFile(`${outputPath}.png`);
 
                 fs.unlinkSync(file.path);
-                
-                const convertedFile = {
+
+                return {
                     mimetype: 'image/png',
                     originalname: file.originalname,
                     filename: `${outputFilename}.png`,
                     path: outputPath
                 };
-
-                return convertedFile;
             } catch (conversionError) {
                 errors.push(`Error converting file: ${file.originalname}`);
                 return null;
@@ -67,7 +65,6 @@ const uploadMiddleware = (req, res, next) => {
             return res.status(400).json({ errors });
         }
 
-        // mimetype, originalname, filename
         req.files = convertedFiles.map((file) => ({
             mimetype: 'image/png',
             originalname: file.originalname,
