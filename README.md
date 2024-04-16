@@ -9,34 +9,34 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 - Sign up for a new account.
 - Log in with existing credentials.
 <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/signup.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/login.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/signup.png" height="400" alt="signup">
+    <img src="sd-frontend-app/public/images/screenshots/login.png" height="400" alt="login">
 </p>
 
 ##### Image Creation:
 - Generate artistic images from text.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/generate.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/generated_image.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/generate.png" height="400" alt="generate">
+    <img src="sd-frontend-app/public/images/screenshots/generated_image.png" height="400" alt="generated_image">
     </p>
 - Combine text with uploaded images to create unique compositions.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/uploaded_image.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/img2img_result.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/uploaded_image.png" height="400" alt="uploaded_image">
+    <img src="sd-frontend-app/public/images/screenshots/img2img_result.png" height="400" alt="img2img_result">
     </p>
-- Explore various artistic styles using Stablediffusion AI.
+- Explore various artistic styles using Stable Diffusion.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/artistic_styles.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/artistic_styles.png" height="400" alt="artistic_styles">
     </p>
 
 ##### Model Training:
 - Train your own models to customize image generation.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/mila_1.jpg" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/mila_2.JPG" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/create_model.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/created_model.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/model_image.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/mila_1.jpg" height="400" alt="mila_1">
+    <img src="sd-frontend-app/public/images/screenshots/mila_2.JPG" height="400" alt="mila_2">
+    <img src="sd-frontend-app/public/images/screenshots/create_model.png" height="400" alt="create_model">
+    <img src="sd-frontend-app/public/images/screenshots/created_model.png" height="400" alt="created_model">
+    <img src="sd-frontend-app/public/images/screenshots/model_image.png" height="400" alt="model_image">
     </p>
 
 ##### Account Management:
@@ -44,21 +44,21 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 - Update first and last name.
 - Delete your account.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/account.png" height="400">
+        <img src="sd-frontend-app/public/images/screenshots/account.png" height="400" alt="account">
     </p>
 
 ##### Instructions:
 - Read detailed instructions on using different features.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/info.png" height="400">
+        <img src="sd-frontend-app/public/images/screenshots/info.png" height="400" alt="info">
     </p>
 
 ##### Image Management:
 - View and manage created images.
 - Save or delete images based on your preference.
     <p align="center">
-    <img src="sd-frontend-app/public/images/screenshots/album.png" height="400">
-    <img src="sd-frontend-app/public/images/screenshots/image_view.png" height="400">
+    <img src="sd-frontend-app/public/images/screenshots/album.png" height="400" alt="album">
+    <img src="sd-frontend-app/public/images/screenshots/image_view.png" height="400" alt="image_view">
     </p>
 
 ### Technologies Used
@@ -66,14 +66,15 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 2. React Native
 3. MySQL
 4. Ngrok
-5. Stablediffusion API
+5. StableDiffusionAPI (ModelsLab)
 
 ### Getting Started
 
 ##### Prerequisites
 - Node.js installed
 - MySQL database set up
-- Stablediffusion API key
+- Ngrok installed
+- StableDiffusionAPI (ModelsLab) key
 - Expo App
 
 ##### Installation
@@ -102,7 +103,7 @@ DreamCanvas is a versatile mobile application that allows users to unleash their
 - Explore different features, create images, and manage your account.
 
 ### Acknowledgments
-Special thanks to the developers of the Stablediffusion API.
+Special thanks to the developers of the StableDiffusionAPI.
 
 ### Contact
 For any inquiries, please contact [Sofya Murzakova](mailto:murz.sophie@gmail.com).
