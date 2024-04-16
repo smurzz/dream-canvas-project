@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { Alert, Image, Modal, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useCallback } from 'react';
+import { Alert, Image, Modal, StyleSheet, TouchableOpacity } from 'react-native';
 import Paragraph from './Paragraph';
 import { theme } from '../core/theme';
 import Header from './Header';
@@ -8,7 +8,7 @@ import { deleteGeneratedImageById } from '../api/images';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
 
-export default function ImageModal({ navigation, visible, setIsVisible, selectedImage }) {
+export default function ImageModal({ visible, setIsVisible, selectedImage }) {
 
     const deletePhoto = useCallback(() => {
         Alert.alert('Do you want to delete this image?', '', [
@@ -45,11 +45,8 @@ export default function ImageModal({ navigation, visible, setIsVisible, selected
     }, []);
 
     const savePhoto = useCallback(async () => {
-        console.log("Save!!!!");
         try {
             const { status } = await MediaLibrary.requestPermissionsAsync();
-            console.log(status);
-            console.log(selectedImage);
 
             if (status === 'granted') {
                 Alert.alert('Do you want to save this image?', '', [
