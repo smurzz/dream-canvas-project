@@ -70,7 +70,7 @@ const findMyModel = async (req, res) => {
 
 // CREATE
 const webhookStatusModel = async (req, res) => {
-    const { status, training_status, logs, model_id } = req.body;
+    const { status, training_status, model_id } = req.body;
     const modelID = req.params.id;
 
     const t = await db.sequelize.transaction();
@@ -148,7 +148,7 @@ const createModel = async (req, res) => {
         await newModel.save({ transaction: t });
 
         // Create uploaded Images and add them to model 
-        files.forEach(async file => {
+        for (const file of files) {
             const filePath = path.join('app/resources/static/assets/uploads/model', file.filename);
             const fileData = await fs.promises.readFile(filePath);
 
@@ -158,7 +158,7 @@ const createModel = async (req, res) => {
                 data: fileData,
                 model_id: newModel.id
             }, { transaction: t });
-        });
+        }
 
         // Generate a model with the stable diffusion API
         const webhook = `${ngrok}/api/models/training-status/${newModel.id}`;
@@ -167,11 +167,13 @@ const createModel = async (req, res) => {
             key: sdapiKey,
             instance_prompt,
             class_prompt,
-            base_model_id: "midjourney",
+            base_model_type: "sdxl",
+            negative_prompt: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
             images,
             seed: "0",
             training_type: typeModel,
             max_train_steps: steps.toString(),
+            lora_type: "lora",
             webhook,
         });
         console.log(sdResponse);

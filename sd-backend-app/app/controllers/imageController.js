@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { db } = require('../config/dbConfig');
 const axios = require('axios');
-const config = require('../config/config');
 require('dotenv').config();
 const { getPrompt, negativePrompts } = require('../utils/imageUtils');
 const { validateUser } = require('../utils/userUtils');
@@ -199,10 +198,8 @@ const createImg2img = async (req, res) => {
         });
 
         // Convert blob data to base64
-        const generatedImageBase64 = Buffer.from(generation.generatedImage.data).toString('base64');
-        generation.generatedImage.data = generatedImageBase64;
-        const uploadedImageBase64 = Buffer.from(generation.uploadedImage.data).toString('base64');
-        generation.uploadedImage.data = uploadedImageBase64;
+        generation.generatedImage.data = Buffer.from(generation.generatedImage.data).toString('base64');
+        generation.uploadedImage.data = Buffer.from(generation.uploadedImage.data).toString('base64');
 
         await t.commit();
         res.status(201).json(generation);
@@ -216,7 +213,8 @@ const createTxt2img = async (req, res) => {
     const userEmail = req.user.email;
 
     const externalServiceUrl = 'http://127.0.0.1:7860/sdapi/v1/txt2img';
-    const prompt = `${artDirection}-style painting of ${subject}${artist ? `, by ${artist}` : ''}`;
+    const prompt = getPrompt(artDirection, subject, artist);
+    const formattedStyle = artDirection === "pop-art" ? artDirection.replace('-', '').toLowerCase() : artDirection;
 
     const t = await db.sequelize.transaction();
 
@@ -226,7 +224,12 @@ const createTxt2img = async (req, res) => {
         if (!author) return res.status(404).json({ error: "User is not found" });
 
         // Generate an image with the stable diffusion API
-        const sdResponse = await axios.post(externalServiceUrl, { prompt, save_images: true });
+        const sdResponse = await axios.post(externalServiceUrl,
+            {
+                prompt,
+                negative_prompt: negativePrompts[formattedStyle],
+                save_images: true
+            });
 
         if (!sdResponse.data || !sdResponse.data.images) {
             return res.status(500).json({ error: 'Failed to create an image' });
@@ -258,8 +261,7 @@ const createTxt2img = async (req, res) => {
         });
 
         // Convert blob data to base64
-        const base64 = Buffer.from(generatedImage.generatedImage.data).toString('base64');
-        generatedImage.generatedImage.data = base64;
+        generatedImage.generatedImage.data = Buffer.from(generatedImage.generatedImage.data).toString('base64');
 
         await t.commit();
         res.status(201).json(generatedImage);
@@ -270,7 +272,6 @@ const createTxt2img = async (req, res) => {
     }
 }
 const createImg2imgSDAPI = async (req, res) => {
-    console.log(req.file);
     const { mimetype, originalname, filename } = req.file;
     const { subject, artDirection, artist, model_id } = req.body;
     const userEmail = req.user.email;
@@ -295,18 +296,25 @@ const createImg2imgSDAPI = async (req, res) => {
         // Generate an image with the stable diffusion API
         let sdResponse = await axios.post(externalServiceUrl, {
             key: sdapiKey,
-            model_id,
+            model_id: model_id || "sdxl",
             prompt,
             negative_prompt: negativePrompts[formattedStyle],
             init_image: `${ngrokURL}/${filename}`,
             width: 512,
             height: 512,
-            samples: 1,
-            num_inference_steps: 30,
+            samples: "1",
+            num_inference_steps: "20",
             safety_checker: "no",
             enhance_prompt: "no",
             guidance_scale: 16,
-            strength: 0.45,
+            use_karras_sigmas: "no",
+            lora_model: null,
+            tomesd: "yes",
+            strength: 0.55,
+            scheduler: "UniPCMultistepScheduler",
+            vae: null,
+            lora_strength: null,
+            embeddings_model: null,
             seed: null,
             webhook: null,
             track_id: null
@@ -370,10 +378,8 @@ const createImg2imgSDAPI = async (req, res) => {
         });
 
         // Convert blob data to base64
-        const generatedImageBase64 = Buffer.from(generation.generatedImage.data).toString('base64');
-        generation.generatedImage.data = generatedImageBase64;
-        const uploadedImageBase64 = Buffer.from(generation.uploadedImage.data).toString('base64');
-        generation.uploadedImage.data = uploadedImageBase64;
+        generation.generatedImage.data = Buffer.from(generation.generatedImage.data).toString('base64');
+        generation.uploadedImage.data = Buffer.from(generation.uploadedImage.data).toString('base64');
 
         await t.commit();
         res.status(201).json(generation);
@@ -393,9 +399,8 @@ const createTxt2imgSDAPI = async (req, res) => {
     const { subject, artDirection, artist, model_id } = req.body;
     const userEmail = req.user.email;
     const sdapiKey = process.env.KEY_SDAPI;
-    console.log(req.body);
 
-    const externalServiceUrl = model_id ? process.env.DREAMBOOTH_TXT2IMG_URL : process.env.TEXT2IMG_URL;
+    const externalServiceUrl = process.env.TEXT2IMG_URL;
     const prompt = getPrompt(artDirection, subject, artist);
     const formattedStyle = artDirection === "pop-art" ? artDirection.replace('-', '').toLowerCase() : artDirection;
 
@@ -408,17 +413,23 @@ const createTxt2imgSDAPI = async (req, res) => {
         // Generate an image with the stable diffusion API
         let sdResponse = await axios.post(externalServiceUrl, {
             key: sdapiKey,
-            model_id,
+            model_id: model_id || "sdxl",
             prompt,
             negative_prompt: negativePrompts[formattedStyle],
             width: 512,
             height: 512,
-            samples: 1,
-            num_inference_steps: 30,
+            samples: "1",
+            num_inference_steps: "30",
             safety_checker: "no",
             enhance_prompt: "no",
-            seed: null,
             guidance_scale: 7.5,
+            tomesd: "yes",
+            scheduler: "UniPCMultistepScheduler",
+            use_karras_sigmas: "no",
+            vae: null,
+            lora_strength: null,
+            embeddings_model: null,
+            seed: null,
             webhook: null,
             track_id: null
         });
@@ -471,14 +482,12 @@ const createTxt2imgSDAPI = async (req, res) => {
         });
 
         // Convert blob data to base64
-        const base64 = Buffer.from(generatedImage.generatedImage.data).toString('base64');
-        generatedImage.generatedImage.data = base64;
+        generatedImage.generatedImage.data = Buffer.from(generatedImage.generatedImage.data).toString('base64');
 
         await t.commit();
         res.status(201).json(generatedImage);
     } catch (error) {
         const errMessage = error.response?.data?.message ?? error;
-        // console.error('Error creating by text to image:', errMessage);
         console.log(errMessage);
         await t.rollback();
 
