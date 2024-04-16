@@ -11,7 +11,7 @@ import TextInput from '../components/TextInput';
 import ImageRadioButton from '../components/ImageRadioButton';
 import { isTokenExpired } from '../utils/isAuth';
 import { getUserByEmail } from '../api/user';
-import { generateTxt2Image, generateImg2Image, generateImg2ImageSDAPI, generateTxt2ImageSDAPI } from '../api/images';
+import { generateImg2ImageSDAPI, generateTxt2ImageSDAPI } from '../api/images';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../core/theme';
 import { promptValidator, styleValidator } from '../helpers/imageGenerationValidator';
@@ -214,13 +214,22 @@ export default function Generate({ navigation }) {
       });
 
       if (!result.canceled) {
+        const imageUrl = result.assets[0].uri;
+        const imageWidth = result.assets[0].width;
+        const imageHeight = result.assets[0].height;
+
+        const size = Math.min(imageWidth, imageHeight);
+
+        const cropX = (imageWidth - size) / 2;
+        const cropY = (imageHeight - size) / 2;
+
         const formatedImage = await ImageManipulator.manipulateAsync(
-          result.uri,
-          [],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+            imageUrl,
+            [{ crop: { originX: cropX, originY: cropY, width: size, height: size } }],
+            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
         );
 
-        setUploadedImageUrl({ uri: result.uri });
+        setUploadedImageUrl({ uri: imageUrl });
         setUploadedImage({
           uri: formatedImage.uri,
           type: 'image/png',
